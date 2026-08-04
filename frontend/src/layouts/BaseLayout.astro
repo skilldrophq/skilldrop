@@ -4,9 +4,20 @@ import "../styles/global.css";
 interface Props {
   title: string;
   description: string;
+  bodyClass?: string;
+  favicon?: string;
+  socialImage?: string;
+  themeColor?: string;
 }
 
-const { title, description } = Astro.props;
+const {
+  title,
+  description,
+  bodyClass,
+  favicon = "/favicon.svg",
+  socialImage = "/social-card.svg",
+  themeColor = "#f7f1e8",
+} = Astro.props;
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 ---
 
@@ -16,7 +27,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="description" content={description} />
-    <meta name="theme-color" content="#f7f1e8" />
+    <meta name="theme-color" content={themeColor} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -24,19 +35,19 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       rel="stylesheet"
     />
     <link rel="canonical" href={canonicalURL} />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/svg+xml" href={favicon} />
     <meta property="og:type" content="website" />
     <meta property="og:url" content={canonicalURL} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:image" content={new URL("/social-card.svg", Astro.site)} />
+    <meta property="og:image" content={new URL(socialImage, Astro.site)} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
-    <meta name="twitter:image" content={new URL("/social-card.svg", Astro.site)} />
+    <meta name="twitter:image" content={new URL(socialImage, Astro.site)} />
     <title>{title}</title>
   </head>
-  <body>
+  <body class={bodyClass}>
     <slot />
   </body>
 </html>

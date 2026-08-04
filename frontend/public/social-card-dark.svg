@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#11130f"/>
+  <path d="M0 0h28v630H0zM1172 0h28v630h-28z" fill="#aaff00"/>
+  <path d="M70 82h1060M70 525h1060" stroke="#596052"/>
+  <g transform="translate(78 92)" fill="none" stroke="#aaff00" stroke-width="7">
+    <path d="M0 24h68v52H0z"/><path d="M34 0v54m0 0 16-16M34 54 18 38"/>
+  </g>
+  <text x="172" y="147" fill="#eef3e8" font-family="Arial, sans-serif" font-size="38" font-weight="700">skilldrop</text>
+  <text x="78" y="328" fill="#eef3e8" font-family="Arial, sans-serif" font-size="98" font-weight="700" letter-spacing="-6">Your skill.</text>
+  <text x="78" y="427" fill="#aaff00" font-family="Arial, sans-serif" font-size="98" font-weight="700" letter-spacing="-6">Their machine.</text>
+  <text x="78" y="575" fill="#aeb6a8" font-family="monospace" font-size="22" font-weight="700" letter-spacing="3">LOCAL SKILL → IMMUTABLE LINK → INSTALLED ANYWHERE</text>
+  <text x="1025" y="128" fill="#aaff00" font-family="monospace" font-size="18" font-weight="700">SK / 01</text>
+</svg>
