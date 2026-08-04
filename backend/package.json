@@ -21,6 +21,8 @@
     "nanoid": "^6.0.1"
   },
   "scripts": {
+    "dev": "alchemy dev",
+    "deploy": "alchemy deploy",
     "prepare": "effect-tsgo patch --typescript --oxlint"
   }
 }

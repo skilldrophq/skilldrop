@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#f1efe9"/>
+  <path d="M62 62h1076v506H62z" fill="none" stroke="#1b201c"/>
+  <path d="M62 156h1076M820 156v412" stroke="#a9aca5"/>
+  <g transform="translate(92 88)" fill="none" stroke="#345244" stroke-width="5">
+    <path d="M0 18h52v39H0z"/><path d="M26 0v41m0 0 12-12M26 41 14 29"/>
+  </g>
+  <text x="165" y="128" fill="#1b201c" font-family="Arial, sans-serif" font-size="33" font-weight="700">Skilldrop</text>
+  <text x="92" y="280" fill="#1b201c" font-family="Georgia, serif" font-size="75">Your skill.</text>
+  <text x="92" y="370" fill="#345244" font-family="Georgia, serif" font-size="75" font-style="italic">Their machine.</text>
+  <text x="92" y="490" fill="#626a63" font-family="Arial, sans-serif" font-size="24">From your terminal to theirs in one command.</text>
+  <text x="850" y="220" fill="#345244" font-family="monospace" font-size="18">SNAPSHOT RECORD</text>
+  <circle cx="978" cy="354" r="72" fill="none" stroke="#345244" stroke-width="2"/>
+  <path d="M978 310v79m0 0 24-24m-24 24-24-24" fill="none" stroke="#345244" stroke-width="3"/>
+  <text x="907" y="505" fill="#626a63" font-family="monospace" font-size="16">SKILLDROP.IO</text>
+</svg>
