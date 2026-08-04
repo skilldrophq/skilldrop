@@ -113,7 +113,6 @@ const readStoredSnapshot = Effect.fn("readStoredSnapshot")(function* (
 
 const WorkerImplementation = Effect.gen(function* () {
   const bucket = yield* Cloudflare.R2.ReadWriteBucket(Bucket);
-  const workerUrl = yield* Cloudflare.Worker.URL;
 
   const getObject = Effect.fn("getObject")(function* (id: SnapshotId) {
     const object = yield* bucket.get(snapshotKey(id)).pipe(Effect.orDie);
@@ -131,11 +130,19 @@ const WorkerImplementation = Effect.gen(function* () {
         .handle(
           "createSnapshot",
           Effect.fn("createSnapshot")(function* () {
-            const publicUrl = yield* workerUrl;
+            const request = yield* HttpServerRequest;
             const id = `sk_${nanoid(22)}` as SnapshotId;
+            const protocol = request.headers["x-forwarded-proto"] ?? "http";
+            const host =
+              request.headers["x-forwarded-host"] ??
+              request.headers.host ??
+              "localhost";
+            const requestUrl = URL.canParse(request.url)
+              ? request.url
+              : `${protocol}://${host}${request.url}`;
             return new CreatedSnapshot({
               id,
-              upload_url: new URL(`/v1/snapshots/${id}`, publicUrl).toString(),
+              upload_url: new URL(`/v1/snapshots/${id}`, requestUrl).toString(),
             });
           }),
         )
@@ -240,19 +247,27 @@ const WorkerImplementation = Effect.gen(function* () {
   };
 }).pipe(Effect.provide(Cloudflare.R2.ReadWriteBucketBinding));
 
-export default WorkerImplementation;
+export class SkilldropWorker extends Cloudflare.Worker<
+  SkilldropWorker,
+  Cloudflare.WorkerShape
+>()("SkilldropWorker") {}
+
+const workerLayer = (props: Parameters<typeof SkilldropWorker.make>[0]) =>
+  SkilldropWorker.make(props, WorkerImplementation);
+
+export default workerLayer({ main: import.meta.url });
 
 export const makeWorker = ({ directory, domain, hash }: WebsiteAssets) =>
-  Cloudflare.Worker(
-    "SkilldropWorker",
-    {
-      main: import.meta.url,
-      domain,
-      assets: {
-        directory,
-        hash,
-        runWorkerFirst: ["/s/*", "/v1/*"],
-      },
-    },
-    WorkerImplementation,
+  SkilldropWorker.pipe(
+    Effect.provide(
+      workerLayer({
+        main: import.meta.url,
+        domain,
+        assets: {
+          directory,
+          hash,
+          runWorkerFirst: ["/s/*", "/v1/*"],
+        },
+      }),
+    ),
   );
