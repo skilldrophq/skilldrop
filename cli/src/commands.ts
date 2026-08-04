@@ -1,33 +1,44 @@
-import { Config, Console, Effect, FileSystem, Option, Path } from "effect"
+import { Console, Effect, FileSystem, Option, Path } from "effect"
 import { Argument, Command, Flag, Prompt } from "effect/unstable/cli"
 import { agentNames, detectInstalledAgents, loadAgents, resolveAgentSelection, type Agent, type AgentName } from "./agents.ts"
 import { SkilldropApi, parseSnapshotId } from "./api.ts"
 import { CliError } from "./errors.ts"
 import { buildSkillBundle, installVerifiedSkill, linkInstalledSkill, verifySkillBundle } from "./skill.ts"
 
-const apiUrl = Flag.string("api-url").pipe(
-  Flag.withDescription("Skilldrop server URL"),
-  Flag.withDefault("https://skilldrop.dev")
-)
+const productionApiUrl = "https://skilldrop.dev"
 
-export const root = Command.make("sk").pipe(
-  Command.withSharedFlags({ apiUrl }),
-  Command.withDescription("Share and install agent skills")
-)
+export const makeCommand = (devMode: boolean) => {
+  const base = Command.make("sk").pipe(
+    Command.withDescription("Share and install agent skills")
+  )
+  const root = devMode
+    ? base.pipe(Command.withSharedFlags({
+        apiUrl: Flag.string("api-url").pipe(
+          Flag.withDescription("Skilldrop server URL (development only)"),
+          Flag.withDefault(productionApiUrl)
+        )
+      }))
+    : base
 
-const share = Command.make(
+  const getApiUrl = Effect.fn("getApiUrl")(function*() {
+    if (!devMode) return productionApiUrl
+    const options = yield* root
+    return (options as { readonly apiUrl: string }).apiUrl
+  })
+
+  const share = Command.make(
   "share",
   {
     path: Argument.string("path").pipe(Argument.withDescription("Path to a skill directory"))
   },
   Effect.fn("shareCommand")(function*({ path }) {
-    const options = yield* root
+    const apiUrl = yield* getApiUrl()
     const api = yield* SkilldropApi
     yield* Console.log(`Validating ${path}…`)
     const bundle = yield* buildSkillBundle(path)
-    const created = yield* api.create(options.apiUrl)
+    const created = yield* api.create(apiUrl)
     yield* api.upload(created.upload_url, bundle.bytes)
-    const url = new URL(`/s/${created.id}`, options.apiUrl).toString()
+    const url = new URL(`/s/${created.id}`, apiUrl).toString()
     yield* Console.log(`Shared ${bundle.manifest.name}`)
     yield* Console.log(url)
     yield* Console.log(`Install with: sk install ${url}`)
@@ -37,18 +48,18 @@ const share = Command.make(
   Command.withExamples([{ command: "sk share ~/.claude/skills/review-pr", description: "Share a local skill" }])
 )
 
-const agent = Flag.choice("agent", agentNames).pipe(
+  const agent = Flag.choice("agent", agentNames).pipe(
   Flag.withAlias("a"),
   Flag.withDescription("Agent to install for (repeatable)"),
   Flag.atMost(10)
 )
 
-const scope = Flag.choice("scope", ["project", "global"] as const).pipe(
+  const scope = Flag.choice("scope", ["project", "global"] as const).pipe(
   Flag.withDescription("Install in this project or globally"),
   Flag.optional
 )
 
-const install = Command.make(
+  const install = Command.make(
   "install",
   {
     snapshot: Argument.string("snapshot").pipe(Argument.withDescription("Snapshot URL or ID")),
@@ -58,13 +69,13 @@ const install = Command.make(
     copy: Flag.boolean("copy").pipe(Flag.withDescription("Copy into each agent directory instead of symlinking"))
   },
   Effect.fn("installCommand")(function*({ snapshot, agent: requestedNames, scope: requestedScope, yes, copy }) {
-    const rootOptions = yield* root
+    const apiUrl = yield* getApiUrl()
     const api = yield* SkilldropApi
     const path = yield* Path.Path
     const fs = yield* FileSystem.FileSystem
     const id = yield* parseSnapshotId(snapshot)
-    const metadata = yield* api.metadata(rootOptions.apiUrl, id)
-    const compressed = yield* api.download(rootOptions.apiUrl, id)
+    const metadata = yield* api.metadata(apiUrl, id)
+    const compressed = yield* api.download(apiUrl, id)
     const verified = yield* verifySkillBundle(compressed, metadata.sha256)
     if (JSON.stringify(verified.manifest) !== JSON.stringify(metadata.manifest)) {
       return yield* new CliError({ message: "Bundle manifest does not match snapshot metadata" })
@@ -158,4 +169,5 @@ const install = Command.make(
   Command.withExamples([{ command: "sk install https://skilldrop.dev/s/sk_…", description: "Install a shared skill" }])
 )
 
-export const command = root.pipe(Command.withSubcommands([share, install]))
+  return root.pipe(Command.withSubcommands([share, install]))
+}

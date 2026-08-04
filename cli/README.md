@@ -25,3 +25,9 @@ Installation follows the same model as the Skills CLI: it detects installed agen
 The MVP agent registry includes AiderDesk, Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot, Goose, OpenCode, OpenHands, and the universal agents directory.
 
 Run `sk --help` for all options.
+
+For local backend development, run `bun run dev`. This enables the otherwise unavailable `--api-url` flag:
+
+```sh
+bun run dev --api-url http://localhost:8787 share ./my-skill
+```
