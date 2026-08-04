@@ -5,8 +5,14 @@
   "private": true,
   "workspaces": [
     "frontend",
-    "backend"
+    "backend",
+    "cli"
   ],
+  "scripts": {
+    "build:cli": "bun run --cwd cli build",
+    "test:cli": "bun run --cwd cli test",
+    "check:cli": "bun run --cwd cli check"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },
