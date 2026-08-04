@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#f7f1e8"/>
+  <path d="M0 530h1200v100H0z" fill="#e85d2a"/>
+  <g transform="translate(80 72)" fill="none" stroke="#e85d2a" stroke-width="8">
+    <path d="M0 28h76v58H0z"/><path d="M38 0v60m0 0 18-18M38 60 20 42"/>
+  </g>
+  <text x="178" y="132" fill="#281a29" font-family="Arial, sans-serif" font-size="44" font-weight="700">Skilldrop</text>
+  <text x="80" y="300" fill="#281a29" font-family="Georgia, serif" font-size="92" font-weight="600">Send the skill.</text>
+  <text x="80" y="396" fill="#e85d2a" font-family="Georgia, serif" font-size="92" font-style="italic">Skip the repo.</text>
+  <text x="80" y="580" fill="#281a29" font-family="Arial, sans-serif" font-size="25" font-weight="700" letter-spacing="2">SKILLDROP.IO  ·  AGENT SKILL TRANSFER</text>
+</svg>
