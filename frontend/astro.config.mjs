@@ -1,5 +1,5 @@
 export default {
-  site: "https://skilldrop.io",
+  site: "https://skilldrop.dev",
   output: "static",
   trailingSlash: "never",
 };

@@ -9,8 +9,7 @@ L'MVP è composto da una sola applicazione serverless:
 - un bucket **Cloudflare R2** che contiene un bundle per snapshot;
 - infrastruttura dichiarata in TypeScript con **Alchemy** e modellata con
   **Effect**;
-- un sito React/Vite statico, separato dal Worker, quando servirà una UI oltre
-  alla pagina snapshot.
+- un sito **Astro** statico, pubblicato come asset dello stesso Worker.
 
 Non introduciamo ora un servizio Go, D1, KV, autenticazione o un database. Per
 uno snapshot pubblico bastano un ID non enumerabile e un bundle immutabile su
@@ -33,14 +32,16 @@ registry. Quindi:
 ```mermaid
 flowchart LR
   CLI["sk CLI (Go)"] -->|"crea + carica snapshot"| Worker["Skilldrop Worker (TS + Effect)"]
-  Browser["Browser / curl"] -->|"legge snapshot"| Worker
+  Browser["Browser / curl"] -->|"landing, snapshot e API"| Worker
+  Astro["Astro static build"] -->|"asset binding"| Worker
   Worker <--> R2["R2: bundle, preview e manifest"]
-  Web["React + Vite (post-MVP)"] --> Worker
 ```
 
 Il Worker è l'unica API pubblica. R2 non viene esposto direttamente: il Worker
 convalida l'upload, applica la policy di scadenza e restituisce gli header di
-sicurezza e cache corretti.
+sicurezza e cache corretti. Cloudflare esegue il codice Worker prima degli
+asset solo per `/s/*` e `/v1/*`; tutte le altre route vengono servite
+direttamente dal build statico Astro.
 
 ## Snapshot e formato bundle
 
@@ -181,11 +182,10 @@ le operazioni applicative usano Effect dove rende espliciti errori, limiti e
 osservabilità, senza forzare l'intera CLI o la UI ad adottarlo.
 
 ```text
-alchemy.run.ts          Stack, R2, Worker, route e cron
-src/worker.ts           router HTTP e handler Effect
-src/snapshot.ts         validazione manifest e policy R2
-src/http.ts             response, cache e content-disposition
-apps/web/               React + Vite (post-MVP)
+backend/alchemy.run.ts  Stack, build Astro, R2, Worker, dominio e cron
+backend/src/worker.ts   router HTTP, asset config e handler Effect
+backend/src/snapshot.ts validazione manifest e policy R2
+frontend/               landing page Astro statica
 cmd/sk/                 CLI Go (prossimo step)
 ```
 
@@ -196,7 +196,7 @@ versioni della CLI. [Alchemy](https://alchemy.run/)
 
 ## Evoluzione post-MVP
 
-1. Aggiungere la preview React con file tree e checksum, lasciando invariati
+1. Aggiungere la preview web con file tree e checksum, lasciando invariati
    `/s/:id` raw e `/s/:id/bundle`.
 2. Aggiungere un manifest/preview separata se limiti o traffico rendono
    sconveniente l'estrazione del bundle nel Worker.
