@@ -6,6 +6,9 @@ const canonicalId = "7fx2kaAbCDefGhijkLmNop";
 
 test("accepts prefix-free snapshot IDs", () => {
   expect(Schema.decodeUnknownSync(SnapshotId)(canonicalId)).toBe(canonicalId);
+  expect(Schema.decodeUnknownSync(SnapshotId)(canonicalId.slice(0, 7))).toBe(
+    canonicalId.slice(0, 7),
+  );
 });
 
 test("keeps accepting legacy prefixed snapshot IDs", () => {
@@ -15,4 +18,7 @@ test("keeps accepting legacy prefixed snapshot IDs", () => {
 
 test("rejects malformed snapshot IDs", () => {
   expect(() => Schema.decodeUnknownSync(SnapshotId)("7fx2ka")).toThrow();
+  expect(() =>
+    Schema.decodeUnknownSync(SnapshotId)(`${canonicalId}x`),
+  ).toThrow();
 });

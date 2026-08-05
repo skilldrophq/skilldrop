@@ -200,12 +200,13 @@ sequenceDiagram
   Skill->>Skill: deterministic tar + gzip
   Cmd->>API: create(apiUrl)
   API->>Worker: POST /v1/snapshots
-  Worker->>Worker: generate nanoid(22)
-  Worker-->>API: 201 { id, upload_url }
+  Worker->>Worker: generate canonical nanoid(22)
+  Worker->>R2: reserve first free aliases/:prefix (7..22)
+  Worker-->>API: 201 { short id, canonical upload_url }
   Cmd->>API: upload(upload_url, bundle)
-  API->>Worker: PUT /v1/snapshots/:id
+  API->>Worker: PUT /v1/snapshots/:canonicalId
   Worker->>Worker: validate Content-Length and archive
-  Worker->>R2: PUT snapshots/:id.tar.gz, If-None-Match: *
+  Worker->>R2: PUT snapshots/:canonicalId.tar.gz, If-None-Match: *
   R2-->>Worker: stored or precondition miss
   Worker-->>API: 201 or 409
   API-->>Cmd: success
@@ -213,8 +214,9 @@ sequenceDiagram
 ```
 
 The CLI does not print the public URL until the upload returns `201`. The create
-operation does not reserve a record in a database: the first successful R2 write
-to the generated key is the act that creates the snapshot.
+operation does not reserve a record in a database. It atomically reserves a
+small R2 alias before returning; the bundle becomes readable only after the
+successful upload to its canonical key.
 
 ### 6.2 Install a snapshot
 
@@ -326,8 +328,9 @@ not to print an additional error report.
 | `sk install <snapshot>` | repeatable `--agent/-a`, `--scope`, `--yes/-y`, `--copy`; development-only `--api-url` | Fetches metadata and bundle, verifies both, selects destinations, confirms, and installs |
 | `sk setup` | repeatable `--agent/-a`, `--scope`, `--yes/-y`, `--copy` | Validates and installs the bundled `use-skilldrop` skill; `--yes` defaults to global scope |
 
-The snapshot argument accepts either a bare 22-character Nano ID or a URL/path
-whose final segment is that ID. Legacy IDs with an `sk_` prefix remain valid.
+The snapshot argument accepts a 7–22 character public ID or a URL/path whose
+final segment is that ID. Legacy 22-character IDs and IDs with an `sk_` prefix
+remain valid.
 
 ### 7.3 Agent selection and destination ownership
 
@@ -379,15 +382,19 @@ Selection behavior:
 ### 8.1 Object and identifier
 
 ```text
-public ID:     22 URL-safe nanoid characters
-R2 key:        snapshots/<id>.tar.gz
+public ID:     shortest reserved prefix, starting at 7 URL-safe characters
+canonical ID:  22 URL-safe nanoid characters
+R2 bundle key: snapshots/<canonical-id>.tar.gz
+R2 alias key:  aliases/<public-id>
 media type:    application/gzip
 download name: bundle.tar.gz
 ```
 
-The 22-character Nano ID is generated at the Worker. There is no separate
-snapshot row or reservation. The ID is exposed to the CLI in both `id` and
-`upload_url`; the same ID becomes the public read capability after upload.
+The Worker generates a 22-character canonical Nano ID and atomically reserves
+its first available prefix, starting at 7 characters, as the permanent public
+ID. The response exposes the short ID in `id` and keeps the canonical ID in
+`upload_url`. Reads resolve the immutable alias before loading the bundle;
+existing canonical and legacy links continue to resolve directly.
 
 ### 8.2 Bundle contents
 
@@ -466,8 +473,9 @@ reject it during installation.
 | `GET` | `/s/:id` | `200` Markdown | Return root `SKILL.md` |
 | `GET` | `/s/:id/bundle` | `200` gzip stream | Download the canonical object |
 
-New route IDs match `^[A-Za-z0-9_-]{22}$`; the API also accepts legacy IDs
-matching `^sk_[A-Za-z0-9_-]{22}$` so existing links remain usable.
+Public route IDs match `^[A-Za-z0-9_-]{7,22}$`; the upload route requires the
+canonical 22-character ID. The API also accepts legacy IDs matching
+`^sk_[A-Za-z0-9_-]{22}$` on read routes so existing links remain usable.
 
 ### 9.1 Upload outcomes
 
@@ -566,8 +574,8 @@ flowchart LR
 
 - Snapshot links are unlisted public capabilities, not authenticated private
   resources.
-- The upload URL has no token separate from the public ID. Possession of a
-  freshly created ID before its first write is sufficient to attempt the upload.
+- The canonical upload capability is separate from the public short ID, but it
+  is not authenticated and remains usable until its first successful write.
 - There is no rate limiting, quota, abuse workflow, malware scanning, account
   ownership, deletion API, or expiry policy in this repository.
 - The Worker performs structural archive validation but does not validate the
@@ -690,7 +698,7 @@ ideas. The following are not present in the current code:
 | Executable warnings/manifest flag | `inspect` derives warnings from verified archive modes; the manifest still lacks an executable field |
 | Expiration and `expires_at` | No expiry metadata, cron, or `410 Gone` behavior |
 | Private snapshots/accounts | No identity or authorization system |
-| Dedicated one-time upload capability | Upload authority is the not-yet-published snapshot ID itself |
+| Authenticated one-time upload capability | Upload authority is a separate canonical ID, but it is not authenticated or time-limited |
 | Formatted snapshot page | `/s/:id` always returns raw Markdown |
 | Preview file tree/checksum UI | Not implemented |
 | `--expires`, `--private`, `--dry-run` | Not implemented |

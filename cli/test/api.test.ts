@@ -5,7 +5,10 @@ import { parseSnapshotId } from "../src/api.ts"
 const canonicalId = "7fx2kaAbCDefGhijkLmNop"
 
 describe("snapshot IDs", () => {
-  test("parses prefix-free IDs and URLs", async () => {
+  test("parses short and canonical IDs and URLs", async () => {
+    const shortId = canonicalId.slice(0, 7)
+    expect(await Effect.runPromise(parseSnapshotId(shortId))).toBe(shortId)
+    expect(await Effect.runPromise(parseSnapshotId(`https://skilldrop.dev/s/${shortId}`))).toBe(shortId)
     expect(await Effect.runPromise(parseSnapshotId(canonicalId))).toBe(canonicalId)
     expect(await Effect.runPromise(parseSnapshotId(`https://skilldrop.dev/s/${canonicalId}`))).toBe(canonicalId)
   })

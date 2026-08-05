@@ -69,11 +69,12 @@ Regole applicate dalla CLI, e verificate nuovamente durante l'estrazione:
 
 ### Bundle canonico e preview separata
 
-Il bundle è l'unica fonte canonica dello snapshot. R2 conserva esattamente un
-oggetto, la cui key usa l'ID pubblico generato dal Worker:
+Il bundle è l'unica fonte canonica dello snapshot. R2 conserva il bundle con
+l'ID canonico casuale e un piccolo oggetto alias per l'ID pubblico:
 
 ```text
-snapshots/<id>.tar.gz
+snapshots/<canonical-id>.tar.gz
+aliases/<public-id> → <canonical-id>
 ```
 
 `GET /s/:id/bundle` fa streaming diretto di questo oggetto R2. Per
@@ -107,31 +108,30 @@ Il flow della CLI è:
 
 ```text
 POST /v1/snapshots
-  → Worker genera ID + token di upload
-PUT /v1/snapshots/{id}
-  → CLI carica il bundle nello slot associato a quell'ID
-GET /s/{id}
+  → Worker genera un ID pubblico corto + capability di upload lunga
+PUT /v1/snapshots/{canonical-id}
+  → CLI carica il bundle nello slot canonico
+GET /s/{public-id}
   → snapshot pubblicato, restituisce SKILL.md
 ```
 
-L'ID viene quindi generato esclusivamente dal Worker, mai dalla CLI. La route
-di upload include l'ID generato nella URL: una `PUT /` globale renderebbe meno
-chiari autorizzazione, retry e log di un singolo snapshot. Nell'MVP l'ID è
-anche il capability necessario a caricare: deve quindi essere lungo, casuale,
-non riusabile e non essere mostrato finché la `PUT` non è completata.
+Gli ID vengono generati esclusivamente dal Worker, mai dalla CLI. L'ID pubblico
+parte da 7 caratteri e si allunga solo in caso di collisione, mentre la route
+di upload contiene sempre il Nano ID canonico da 22 caratteri. La CLI non
+mostra questa capability di upload all'utente.
 
 Il primo `POST` restituisce:
 
 ```json
 {
-  "id": "7fx2ka…",
-  "upload_url": "https://skilldrop.dev/v1/snapshots/7fx2ka…",
-  "expires_at": "2026-08-04T12:05:00Z"
+  "id": "7fx2kaA",
+  "upload_url": "https://skilldrop.dev/v1/snapshots/7fx2kaAbCDefGhijkLmNop"
 }
 ```
 
-L'ID pubblico deve avere almeno 128 bit di casualità e usare un encoding
-URL-safe. Il Worker scrive con una precondizione R2 equivalente a
+La capability di upload conserva circa 128 bit di casualità e usa un encoding
+URL-safe. Il Worker riserva atomicamente il primo alias libero fra i prefissi
+da 7 a 22 caratteri, quindi scrive il bundle con una precondizione R2 equivalente a
 `If-None-Match: *`: la prima `PUT` crea l'oggetto, ogni successiva `PUT` viene
 rifiutata atomicamente. Uno snapshot non può quindi essere sovrascritto, anche
 in presenza di richieste concorrenti. La CLI non stampa la URL pubblica fino a
@@ -139,8 +139,8 @@ risposta positiva dell'upload.
 
 La `PUT` ha body `application/gzip`. Il Worker applica un limite alla
 dimensione, verifica che il bundle contenga un `SKILL.md` root valido e lo
-scrive in R2 con content type `application/gzip`. Non ci sono metadati o
-oggetti R2 aggiuntivi nell'MVP.
+scrive in R2 con content type `application/gzip`. L'unico oggetto R2 aggiuntivo
+è l'alias immutabile che collega l'ID pubblico alla key canonica.
 
 > Alternativa futura: URL presigned R2 per bundle grandi. Non serve nell'MVP:
 > tenere il Worker nel percorso rende semplice l'atomicità logica e la policy.

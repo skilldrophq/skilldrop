@@ -9,19 +9,21 @@ import {
   InvalidSnapshotResponse,
   PayloadTooLargeResponse,
   SnapshotConflictResponse,
+  CanonicalSnapshotId,
   SnapshotId,
   SnapshotMetadata,
   SnapshotNotFoundResponse,
 } from "./models";
 
 const SnapshotParams = Schema.Struct({ id: SnapshotId });
+const CanonicalSnapshotParams = Schema.Struct({ id: CanonicalSnapshotId });
 
 const createSnapshot = HttpApiEndpoint.post("createSnapshot", "/v1/snapshots", {
   success: CreatedSnapshotResponse,
 });
 
 const uploadSnapshot = HttpApiEndpoint.put("uploadSnapshot", "/v1/snapshots/:id", {
-  params: SnapshotParams,
+  params: CanonicalSnapshotParams,
   headers: Schema.Struct({
     "content-length": Schema.optional(Schema.String),
   }),

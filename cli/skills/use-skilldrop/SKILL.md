@@ -44,7 +44,7 @@ Run:
 sk install <snapshot-url-or-id>
 ```
 
-Accept either a Skilldrop URL or its 22-character snapshot ID. Legacy IDs beginning with `sk_` remain valid. By default, let the CLI detect agents, prompt for project or global scope, show destinations and replacements, and ask for confirmation.
+Accept either a Skilldrop URL or its public snapshot ID, which normally has 7 characters and grows only when needed to avoid a collision. Legacy 22-character IDs and IDs beginning with `sk_` remain valid. By default, let the CLI detect agents, prompt for project or global scope, show destinations and replacements, and ask for confirmation.
 
 Use flags only when the user's intent is clear:
 

@@ -21,6 +21,7 @@ import { SnapshotApi } from "./api";
 import { Bucket, SNAPSHOT_LIFETIME_SECONDS } from "./bucket";
 import {
   BadRequest,
+  type CanonicalSnapshotId,
   CreatedSnapshot,
   InvalidSnapshot,
   PayloadTooLarge,
@@ -41,7 +42,18 @@ export interface WebsiteAssets {
   readonly domain?: string;
 }
 
-const snapshotKey = (id: SnapshotId) => `snapshots/${id}.tar.gz`;
+const MIN_PUBLIC_ID_LENGTH = 7;
+
+const snapshotKey = (id: string) => `snapshots/${id}.tar.gz`;
+const snapshotAliasKey = (id: SnapshotId) => `aliases/${id}`;
+
+export const snapshotAliasCandidates = (
+  id: CanonicalSnapshotId,
+): ReadonlyArray<SnapshotId> =>
+  Array.from(
+    { length: id.length - MIN_PUBLIC_ID_LENGTH + 1 },
+    (_, index) => id.slice(0, MIN_PUBLIC_ID_LENGTH + index) as SnapshotId,
+  );
 
 const HttpPlatformStub = Layer.succeed(HttpPlatform.HttpPlatform, {
   platform: "web",
@@ -119,11 +131,35 @@ const WorkerImplementation = Effect.gen(function* () {
   const bucket = yield* Cloudflare.R2.ReadWriteBucket(Bucket);
 
   const getObject = Effect.fn("getObject")(function* (id: SnapshotId) {
-    const object = yield* bucket.get(snapshotKey(id)).pipe(Effect.orDie);
+    const direct = yield* bucket.get(snapshotKey(id)).pipe(Effect.orDie);
+    if (direct !== null) return direct;
+
+    const alias = yield* bucket.get(snapshotAliasKey(id)).pipe(Effect.orDie);
+    if (alias === null) {
+      return yield* new SnapshotNotFound({ message: "Not found" });
+    }
+    const canonicalId = yield* alias.text().pipe(Effect.orDie);
+    const object = yield* bucket
+      .get(snapshotKey(canonicalId))
+      .pipe(Effect.orDie);
     if (object === null) {
       return yield* new SnapshotNotFound({ message: "Not found" });
     }
     return object;
+  });
+
+  const reserveSnapshotAlias = Effect.fn("reserveSnapshotAlias")(function* (
+    id: CanonicalSnapshotId,
+  ) {
+    for (const candidate of snapshotAliasCandidates(id)) {
+      const stored = yield* bucket
+        .put(snapshotAliasKey(candidate), id, {
+          onlyIf: { etagDoesNotMatch: "*" },
+        })
+        .pipe(Effect.orDie);
+      if (stored !== null) return candidate;
+    }
+    return undefined;
   });
 
   const snapshotsGroup = HttpApiBuilder.group(
@@ -135,7 +171,12 @@ const WorkerImplementation = Effect.gen(function* () {
           "createSnapshot",
           Effect.fn("createSnapshot")(function* () {
             const request = yield* HttpServerRequest;
-            const id = nanoid(22) as SnapshotId;
+            let canonicalId: CanonicalSnapshotId;
+            let id: SnapshotId | undefined;
+            do {
+              canonicalId = nanoid(22) as CanonicalSnapshotId;
+              id = yield* reserveSnapshotAlias(canonicalId);
+            } while (id === undefined);
             const protocol = request.headers["x-forwarded-proto"] ?? "http";
             const host =
               request.headers["x-forwarded-host"] ??
@@ -146,7 +187,10 @@ const WorkerImplementation = Effect.gen(function* () {
               : `${protocol}://${host}${request.url}`;
             return new CreatedSnapshot({
               id,
-              upload_url: new URL(`/v1/snapshots/${id}`, requestUrl).toString(),
+              upload_url: new URL(
+                `/v1/snapshots/${canonicalId}`,
+                requestUrl,
+              ).toString(),
             });
           }),
         )

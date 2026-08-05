@@ -44,7 +44,7 @@ Example:
 ```text
 Shared review-pr
 
-https://skilldrop.dev/s/7fx2ka
+https://skilldrop.dev/s/7fx2kaA
 ```
 
 No Git repository, account or configuration is required.
@@ -52,7 +52,7 @@ No Git repository, account or configuration is required.
 ## Install a skill
 
 ```bash
-sk install https://skilldrop.dev/s/7fx2ka
+sk install https://skilldrop.dev/s/7fx2kaA
 ```
 
 The CLI:
@@ -66,8 +66,8 @@ The CLI:
 Examples:
 
 ```bash
-sk install https://skilldrop.dev/s/7fx2ka --agent claude
-sk install https://skilldrop.dev/s/7fx2ka --agent codex
+sk install https://skilldrop.dev/s/7fx2kaA --agent claude
+sk install https://skilldrop.dev/s/7fx2kaA --agent codex
 ```
 
 Installing a skill must never automatically execute scripts contained inside it.
@@ -79,7 +79,7 @@ The MVP has no web application or formatted preview.
 Visiting:
 
 ```text
-https://skilldrop.dev/s/7fx2ka
+https://skilldrop.dev/s/7fx2kaA
 ```
 
 returns the raw contents of `SKILL.md` as plain text.
@@ -87,7 +87,7 @@ returns the raw contents of `SKILL.md` as plain text.
 The complete bundle remains accessible to the CLI through an associated download endpoint, for example:
 
 ```text
-https://skilldrop.dev/s/7fx2ka/archive
+https://skilldrop.dev/s/7fx2kaA/archive
 ```
 
 The snapshot is immutable. Sharing the same directory again generates a new URL.
@@ -210,7 +210,7 @@ When requested through `curl`, another CLI or an explicit plain-text content typ
 Example:
 
 ```bash
-curl https://skilldrop.dev/s/7fx2ka
+curl https://skilldrop.dev/s/7fx2kaA
 ```
 
 returns raw `SKILL.md`.

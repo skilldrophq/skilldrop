@@ -18,11 +18,11 @@ Today, doing this usually means creating a Git repository, copying folders manua
 
 ```bash
 sk share code-review
-# → https://skilldrop.dev/s/7fx2ka
+# → https://skilldrop.dev/s/7fx2kaA
 ```
 
 ```bash
-sk install https://skilldrop.dev/s/7fx2ka
+sk install https://skilldrop.dev/s/7fx2kaA
 ```
 
 ---
@@ -166,7 +166,7 @@ Every share operation creates an immutable snapshot.
 
 ```bash
 sk share review-pr
-# → /s/7fx2ka
+# → /s/7fx2kaA
 ```
 
 Changing and sharing the skill again creates a different snapshot:
@@ -205,9 +205,9 @@ A shared snapshot should expose:
 Skilldrop should understand where supported agents store global and project-level skills.
 
 ```bash
-sk install 7fx2ka --agent claude
-sk install 7fx2ka --agent codex
-sk install 7fx2ka --agent all
+sk install 7fx2kaA --agent claude
+sk install 7fx2kaA --agent codex
+sk install 7fx2kaA --agent all
 ```
 
 ### Ephemeral when useful
