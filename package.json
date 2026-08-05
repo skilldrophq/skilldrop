@@ -3,15 +3,14 @@
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "license": "Apache-2.0",
   "workspaces": [
-    "frontend",
-    "backend",
-    "cli"
+    "packages/*"
   ],
   "scripts": {
-    "build:cli": "bun run --cwd cli build",
-    "test:cli": "bun run --cwd cli test",
-    "check:cli": "bun run --cwd cli check"
+    "build:cli": "bun run --cwd packages/cli build",
+    "test:cli": "bun run --cwd packages/cli test",
+    "check:cli": "bun run --cwd packages/cli check"
   },
   "devDependencies": {
     "@types/bun": "latest"

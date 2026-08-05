@@ -1,3 +1,7 @@
 [tools]
 bun = "latest"
 node = "24"
+
+[tasks.setup]
+description = "Add vendored reference repositories as squashed Git subtrees"
+run = "./scripts/setup-repos.sh"
