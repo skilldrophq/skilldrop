@@ -1,0 +1,206 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import "../../styles/precision.css";
+
+const installCommand = "curl -fsSL https://getsk.dev/install.sh | sh";
+const shareCommand = "sk share ~/.claude/skills/review-pr";
+const snapshotUrl = "skilldrop.dev/s/sk_7fx2ka";
+---
+
+<BaseLayout
+  title="Skilldrop — Share local agent skills in seconds"
+  description="Turn any local agent skill into an immutable, inspectable link. No repository, account, or publishing workflow required."
+  bodyClass="precision-body"
+  themeColor="#0b0b0d"
+>
+  <a class="p-skip" href="#main">Skip to content</a>
+
+  <div class="p-site">
+    <header class="p-header p-wrap">
+      <a class="p-brand" href="/" aria-label="Skilldrop home">
+        <svg viewBox="0 0 32 32" aria-hidden="true">
+          <path d="M5.5 9.5h21v16h-21z"></path>
+          <path d="M16 3.5v14m0 0 5-5m-5 5-5-5"></path>
+        </svg>
+        <span>Skilldrop</span>
+      </a>
+
+      <nav class="p-nav" aria-label="Primary navigation">
+        <a href="#workflow">How it works</a>
+        <a href="#safety">Safety</a>
+        <a class="p-nav-cta" href="#install">Install CLI <span aria-hidden="true">↗</span></a>
+      </nav>
+    </header>
+
+    <main id="main">
+      <section class="p-hero p-wrap" aria-labelledby="p-hero-title">
+        <div class="p-hero-glow" aria-hidden="true"></div>
+        <div class="p-hero-copy">
+          <p class="p-kicker"><span></span> Agent skill transfer</p>
+          <h1 id="p-hero-title">Your skill,<br /><em>in their terminal.</em></h1>
+          <p class="p-lede">Turn the exact agent skill on your disk into a link someone else can inspect and install.</p>
+          <div class="p-actions">
+            <a class="p-button p-button-primary" href="#install">Get the CLI <span aria-hidden="true">→</span></a>
+            <a class="p-button p-button-quiet" href="#workflow">See how it works</a>
+          </div>
+          <p class="p-proof"><span>✓</span> No account <span>✓</span> No Git <span>✓</span> Immutable by default</p>
+        </div>
+
+        <div class="p-console" aria-label="Terminal demonstration of sharing a skill">
+          <div class="p-console-bar">
+            <div><i></i><i></i><i></i></div>
+            <span>skilldrop / share</span>
+            <small>zsh</small>
+          </div>
+          <div class="p-console-body">
+            <p class="p-console-path">~/projects/agent/skills/review-pr</p>
+            <div class="p-command-row">
+              <code><span>$</span> {shareCommand}</code>
+              <button type="button" data-copy={shareCommand} aria-label="Copy share command">
+                <svg viewBox="0 0 18 18" aria-hidden="true"><rect x="6" y="5" width="8" height="9"></rect><path d="M4 11H3V3h8v1"></path></svg>
+              </button>
+            </div>
+            <div class="p-output" aria-label="Command output">
+              <p><span>01</span><i class="done">✓</i> Reading <strong>review-pr</strong></p>
+              <p><span>02</span><i class="done">✓</i> Sealing 2 files <small>4.9 KB</small></p>
+              <p><span>03</span><i class="done">✓</i> Snapshot ready</p>
+            </div>
+            <div class="p-result">
+              <div><small>SHARE LINK</small><a href="#workflow">{snapshotUrl}</a></div>
+              <button type="button" data-copy={snapshotUrl}><span>Copy link</span><b aria-hidden="true">↗</b></button>
+            </div>
+          </div>
+          <div class="p-console-foot"><span><i></i> Snapshot online</span><span>expires in 90 days</span></div>
+        </div>
+      </section>
+
+      <section class="p-strip" aria-label="Product summary">
+        <div class="p-wrap">
+          <p>Built for skills already on your disk.</p>
+          <ul><li>Claude Code</li><li>Codex</li><li>Any skill folder</li></ul>
+        </div>
+      </section>
+
+      <section class="p-workflow p-wrap" id="workflow" aria-labelledby="workflow-title">
+        <div class="p-section-head">
+          <p class="p-overline">The workflow</p>
+          <h2 id="workflow-title">Disk → link → disk.</h2>
+          <p>One focused tool for the moment a useful local skill needs to move.</p>
+        </div>
+
+        <div class="p-steps">
+          <article>
+            <span class="p-step-number">01</span>
+            <div class="p-step-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7h16v12H4zM8 4h8"></path><path d="M12 15V8m0 0-3 3m3-3 3 3"></path></svg></div>
+            <h3>Share a folder.</h3>
+            <p>Pass a skill name or path. The CLI validates the contents and creates a fresh snapshot.</p>
+            <code><span>$</span> sk share review-pr</code>
+          </article>
+          <article>
+            <span class="p-step-number">02</span>
+            <div class="p-step-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 4.5 6v5.5c0 4.2 3.1 7.9 7.5 9.5 4.4-1.6 7.5-5.3 7.5-9.5V6z"></path><path d="m9 12 2 2 4-4"></path></svg></div>
+            <h3>Inspect the link.</h3>
+            <p>See every file, checksum, executable warning, and destination before installation.</p>
+            <code><span>$</span> sk inspect sk_7fx2ka</code>
+          </article>
+          <article>
+            <span class="p-step-number">03</span>
+            <div class="p-step-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"></path><path d="M12 7v8m0 0 3-3m-3 3-3-3"></path></svg></div>
+            <h3>Install anywhere.</h3>
+            <p>Skilldrop detects supported agents and puts the verified skill where it belongs.</p>
+            <code><span>$</span> sk install sk_7fx2ka</code>
+          </article>
+        </div>
+      </section>
+
+      <section class="p-boundary p-wrap" aria-labelledby="boundary-title">
+        <div>
+          <p class="p-overline">A deliberately small boundary</p>
+          <h2 id="boundary-title">Not another<br />skill marketplace.</h2>
+          <p>Skilldrop doesn’t help you find a skill. It helps you send the exact one you already have.</p>
+        </div>
+        <div class="p-compare">
+          <div class="p-compare-muted"><span>Discovery tools</span><p>“Which skill should I install?”</p></div>
+          <div class="p-compare-mark"><span>Skilldrop</span><strong>Transfer,<br />not discovery.</strong></div>
+          <div class="p-compare-active"><span>Skilldrop</span><p>“How do I send you this skill?”</p></div>
+        </div>
+      </section>
+
+      <section class="p-safety" id="safety" aria-labelledby="safety-title">
+        <div class="p-wrap p-safety-grid">
+          <div class="p-safety-copy">
+            <p class="p-overline">Trust the contents</p>
+            <h2 id="safety-title">Open the box<br />before you keep it.</h2>
+            <p>Every link is a sealed snapshot. Recipients can inspect exactly what will land on their machine before they install it.</p>
+            <a href="#install">Read the manifest <span aria-hidden="true">→</span></a>
+          </div>
+
+          <div class="p-manifest">
+            <div class="p-manifest-head"><span>snapshot.manifest</span><strong><i></i> verified</strong></div>
+            <div class="p-tree">
+              <p><span>▾</span><strong>review-pr/</strong><small>4.9 KB</small></p>
+              <p><span>├─</span> SKILL.md <small>3.2 KB</small></p>
+              <p><span>└─</span> references/checklist.md <small>1.7 KB</small></p>
+            </div>
+            <dl>
+              <div><dt>SHA-256</dt><dd>5af1…e91c</dd></div>
+              <div><dt>Symlinks</dt><dd class="safe">rejected</dd></div>
+              <div><dt>Executables</dt><dd class="safe">none</dd></div>
+              <div><dt>Auto-execution</dt><dd class="safe">never</dd></div>
+            </dl>
+            <div class="p-hash"><span>5a</span><span>f1</span><span>8c</span><span>27</span><span>e9</span><span>1c</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="p-install p-wrap" id="install" aria-labelledby="install-title">
+        <p class="p-overline">Start here</p>
+        <h2 id="install-title">One command away.</h2>
+        <p>Install <code>sk</code>, then share any skill folder from your terminal.</p>
+        <div class="p-install-command">
+          <code><span>$</span> {installCommand}</code>
+          <button type="button" data-copy={installCommand} aria-label="Copy install command">
+            <span>Copy</span>
+            <svg viewBox="0 0 18 18" aria-hidden="true"><rect x="6" y="5" width="8" height="9"></rect><path d="M4 11H3V3h8v1"></path></svg>
+          </button>
+        </div>
+        <small>Installer served from <a href="https://getsk.dev/install.sh">getsk.dev</a></small>
+      </section>
+    </main>
+
+    <footer class="p-footer p-wrap">
+      <a class="p-brand" href="/" aria-label="Skilldrop home">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M5.5 9.5h21v16h-21z"></path><path d="M16 3.5v14m0 0 5-5m-5 5-5-5"></path></svg>
+        <span>Skilldrop</span>
+      </a>
+      <p>Move skills, not setup instructions.</p>
+      <nav aria-label="Footer navigation"><a href="#workflow">Workflow</a><a href="#safety">Safety</a><a href="/versions/light">Previous design</a></nav>
+      <small>© {new Date().getFullYear()} skilldrop.dev</small>
+    </footer>
+
+    <div class="p-toast" role="status" aria-live="polite">Copied to clipboard</div>
+  </div>
+
+  <script>
+    const toast = document.querySelector<HTMLElement>(".p-toast");
+    let timeout: number | undefined;
+    document.querySelectorAll<HTMLButtonElement>("[data-copy]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const value = button.dataset.copy;
+        if (!value) return;
+        try {
+          await navigator.clipboard.writeText(value);
+          button.classList.add("is-copied");
+          if (toast) {
+            toast.classList.add("is-visible");
+            window.clearTimeout(timeout);
+            timeout = window.setTimeout(() => toast.classList.remove("is-visible"), 1700);
+          }
+          window.setTimeout(() => button.classList.remove("is-copied"), 1700);
+        } catch {
+          window.prompt("Copy this command:", value);
+        }
+      });
+    });
+  </script>
+</BaseLayout>
