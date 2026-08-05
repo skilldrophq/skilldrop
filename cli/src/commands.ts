@@ -78,7 +78,7 @@ export const makeCommand = (devMode: boolean) => {
     })
   ).pipe(
     Command.withDescription("Verify and inspect a shared skill without installing it"),
-    Command.withExamples([{ command: "sk inspect https://skilldrop.dev/s/sk_…", description: "Inspect a shared skill" }])
+    Command.withExamples([{ command: "sk inspect https://skilldrop.dev/s/7fx2ka…", description: "Inspect a shared skill" }])
   )
 
   const agent = Flag.choice("agent", agentNames).pipe(
@@ -208,7 +208,7 @@ export const makeCommand = (devMode: boolean) => {
 ).pipe(
   Command.withDescription("Verify and install a shared skill"),
   Command.withAlias("i"),
-  Command.withExamples([{ command: "sk install https://skilldrop.dev/s/sk_…", description: "Install a shared skill" }])
+  Command.withExamples([{ command: "sk install https://skilldrop.dev/s/7fx2ka…", description: "Install a shared skill" }])
 )
 
   const setup = Command.make(

@@ -16,6 +16,7 @@ const formatBytes = (bytes: number) => {
 }
 
 const isExecutable = (mode: number) => (mode & 0o111) !== 0
+const shortHash = (hash: string) => `${hash.slice(0, 7)}…`
 
 export const verifySnapshot = Effect.fn("verifySnapshot")(function*(
   metadata: SnapshotMetadata,
@@ -40,7 +41,7 @@ export const renderSnapshotInspection = (
     `  protocol: ${metadata.manifest.protocol_version}`,
     `  uploaded: ${metadata.uploaded_at}`,
     `  bundle: ${formatBytes(metadata.size)} (${metadata.size} bytes)`,
-    `  bundle sha256: ${metadata.sha256}`,
+    `  bundle sha256: ${shortHash(metadata.sha256)}`,
     "  integrity: verified",
     "",
     `Files (${metadata.manifest.files.length})`
@@ -51,7 +52,7 @@ export const renderSnapshotInspection = (
     const executable = isExecutable(entry.mode) ? " executable" : ""
     lines.push(`  ${file.path}`)
     lines.push(`    size: ${formatBytes(file.size)} (${file.size} bytes)`)
-    lines.push(`    sha256: ${file.sha256}`)
+    lines.push(`    sha256: ${shortHash(file.sha256)}`)
     lines.push(`    mode: ${entry.mode.toString(8).padStart(4, "0")}${executable}`)
   }
 

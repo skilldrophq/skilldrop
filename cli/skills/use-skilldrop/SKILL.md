@@ -1,6 +1,6 @@
 ---
 name: use-skilldrop
-description: Use the Skilldrop `sk` command-line interface to share local agent skills through immutable links, inspect and verify snapshots, install shared skills, choose agent destinations and installation scope, or install the bundled Skilldrop skill. Use when a user asks to transfer, share, inspect, verify, or install an agent skill with Skilldrop, interpret a Skilldrop URL or `sk_...` snapshot ID, select `sk install` flags, or troubleshoot the `sk` CLI.
+description: Use the Skilldrop `sk` command-line interface to share local agent skills through immutable links, inspect and verify snapshots, install shared skills, choose agent destinations and installation scope, or install the bundled Skilldrop skill. Use when a user asks to transfer, share, inspect, verify, or install an agent skill with Skilldrop, interpret a Skilldrop URL or snapshot ID, select `sk install` flags, or troubleshoot the `sk` CLI.
 ---
 
 # Use Skilldrop
@@ -15,7 +15,7 @@ Run:
 sk share <path-to-skill-directory>
 ```
 
-Pass the directory containing the root `SKILL.md`, not the Markdown file itself. Report the resulting `https://skilldrop.dev/s/sk_...` URL and preserve it exactly. Sharing creates a new immutable snapshot; sharing the same directory again creates another link.
+Pass the directory containing the root `SKILL.md`, not the Markdown file itself. Report the resulting `https://skilldrop.dev/s/<id>` URL and preserve it exactly. Sharing creates a new immutable snapshot; sharing the same directory again creates another link.
 
 Before sharing, check that the directory:
 
@@ -44,7 +44,7 @@ Run:
 sk install <snapshot-url-or-id>
 ```
 
-Accept either a Skilldrop URL or its `sk_...` snapshot ID. By default, let the CLI detect agents, prompt for project or global scope, show destinations and replacements, and ask for confirmation.
+Accept either a Skilldrop URL or its 22-character snapshot ID. Legacy IDs beginning with `sk_` remain valid. By default, let the CLI detect agents, prompt for project or global scope, show destinations and replacements, and ask for confirmation.
 
 Use flags only when the user's intent is clear:
 

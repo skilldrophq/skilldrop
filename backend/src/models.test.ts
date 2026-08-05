@@ -1,0 +1,18 @@
+import { expect, test } from "bun:test";
+import * as Schema from "effect/Schema";
+import { SnapshotId } from "./models";
+
+const canonicalId = "7fx2kaAbCDefGhijkLmNop";
+
+test("accepts prefix-free snapshot IDs", () => {
+  expect(Schema.decodeUnknownSync(SnapshotId)(canonicalId)).toBe(canonicalId);
+});
+
+test("keeps accepting legacy prefixed snapshot IDs", () => {
+  const legacyId = `sk_${canonicalId}`;
+  expect(Schema.decodeUnknownSync(SnapshotId)(legacyId)).toBe(legacyId);
+});
+
+test("rejects malformed snapshot IDs", () => {
+  expect(() => Schema.decodeUnknownSync(SnapshotId)("7fx2ka")).toThrow();
+});

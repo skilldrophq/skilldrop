@@ -124,8 +124,8 @@ Il primo `POST` restituisce:
 
 ```json
 {
-  "id": "sk_…",
-  "upload_url": "https://skilldrop.dev/v1/snapshots/sk_…",
+  "id": "7fx2ka…",
+  "upload_url": "https://skilldrop.dev/v1/snapshots/7fx2ka…",
   "expires_at": "2026-08-04T12:05:00Z"
 }
 ```

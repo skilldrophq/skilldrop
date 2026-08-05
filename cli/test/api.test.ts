@@ -1,0 +1,23 @@
+import { describe, expect, test } from "bun:test"
+import { Effect } from "effect"
+import { parseSnapshotId } from "../src/api.ts"
+
+const canonicalId = "7fx2kaAbCDefGhijkLmNop"
+
+describe("snapshot IDs", () => {
+  test("parses prefix-free IDs and URLs", async () => {
+    expect(await Effect.runPromise(parseSnapshotId(canonicalId))).toBe(canonicalId)
+    expect(await Effect.runPromise(parseSnapshotId(`https://skilldrop.dev/s/${canonicalId}`))).toBe(canonicalId)
+  })
+
+  test("keeps accepting legacy prefixed IDs", async () => {
+    const legacyId = `sk_${canonicalId}`
+    expect(await Effect.runPromise(parseSnapshotId(legacyId))).toBe(legacyId)
+    expect(await Effect.runPromise(parseSnapshotId(`https://skilldrop.dev/s/${legacyId}`))).toBe(legacyId)
+  })
+
+  test("rejects malformed IDs", async () => {
+    const error = await Effect.runPromise(parseSnapshotId("7fx2ka").pipe(Effect.flip))
+    expect(error.message).toContain("Invalid Skilldrop snapshot")
+  })
+})

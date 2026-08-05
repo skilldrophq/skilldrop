@@ -200,7 +200,7 @@ sequenceDiagram
   Skill->>Skill: deterministic tar + gzip
   Cmd->>API: create(apiUrl)
   API->>Worker: POST /v1/snapshots
-  Worker->>Worker: generate sk_ + nanoid(22)
+  Worker->>Worker: generate nanoid(22)
   Worker-->>API: 201 { id, upload_url }
   Cmd->>API: upload(upload_url, bundle)
   API->>Worker: PUT /v1/snapshots/:id
@@ -326,8 +326,8 @@ not to print an additional error report.
 | `sk install <snapshot>` | repeatable `--agent/-a`, `--scope`, `--yes/-y`, `--copy`; development-only `--api-url` | Fetches metadata and bundle, verifies both, selects destinations, confirms, and installs |
 | `sk setup` | repeatable `--agent/-a`, `--scope`, `--yes/-y`, `--copy` | Validates and installs the bundled `use-skilldrop` skill; `--yes` defaults to global scope |
 
-The snapshot argument accepts either a bare `sk_<22 chars>` ID or a URL/path
-whose final segment is that ID.
+The snapshot argument accepts either a bare 22-character Nano ID or a URL/path
+whose final segment is that ID. Legacy IDs with an `sk_` prefix remain valid.
 
 ### 7.3 Agent selection and destination ownership
 
@@ -379,7 +379,7 @@ Selection behavior:
 ### 8.1 Object and identifier
 
 ```text
-public ID:     sk_<22 URL-safe nanoid characters>
+public ID:     22 URL-safe nanoid characters
 R2 key:        snapshots/<id>.tar.gz
 media type:    application/gzip
 download name: bundle.tar.gz
@@ -466,7 +466,8 @@ reject it during installation.
 | `GET` | `/s/:id` | `200` Markdown | Return root `SKILL.md` |
 | `GET` | `/s/:id/bundle` | `200` gzip stream | Download the canonical object |
 
-All route IDs must match `^sk_[A-Za-z0-9_-]{22}$`.
+New route IDs match `^[A-Za-z0-9_-]{22}$`; the API also accepts legacy IDs
+matching `^sk_[A-Za-z0-9_-]{22}$` so existing links remain usable.
 
 ### 9.1 Upload outcomes
 
@@ -503,7 +504,7 @@ There is one persistent entity: the R2 bundle object.
 ```mermaid
 erDiagram
   SNAPSHOT_OBJECT {
-    string key "snapshots/sk_<id>.tar.gz"
+    string key "snapshots/<id>.tar.gz"
     bytes compressed_bundle
     number size
     string uploaded_at

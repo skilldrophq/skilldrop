@@ -7,7 +7,7 @@ import { ManifestFile, sha256, SkillManifest } from "../src/archive.ts"
 import { renderSnapshotInspection, verifySnapshot } from "../src/inspect.ts"
 import { buildSkillBundle } from "../src/skill.ts"
 
-const id = "sk_1234567890123456789012"
+const id = "1234567890123456789012"
 const markdownHash = "a".repeat(64)
 const scriptHash = "b".repeat(64)
 const bundleHash = "c".repeat(64)
@@ -41,8 +41,10 @@ describe("snapshot inspection", () => {
     expect(output).toContain(`Snapshot ${id}`)
     expect(output).toContain("protocol: 1")
     expect(output).toContain("bundle: 5.0 KiB (5120 bytes)")
-    expect(output).toContain(`bundle sha256: ${bundleHash}`)
-    expect(output).toContain(`sha256: ${markdownHash}`)
+    expect(output).toContain(`bundle sha256: ${bundleHash.slice(0, 7)}…`)
+    expect(output).toContain(`sha256: ${markdownHash.slice(0, 7)}…`)
+    expect(output).not.toContain(bundleHash)
+    expect(output).not.toContain(markdownHash)
     expect(output).toContain("mode: 0755 executable")
     expect(output).toContain("Executable files (1)\n  warning: review these files before installing\n  scripts/check.sh")
     expect(output).toContain(`Install with: sk install ${id}`)

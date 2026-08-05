@@ -17,13 +17,13 @@ sk share ~/.claude/skills/review-pr
 Install a shared skill:
 
 ```sh
-sk install https://skilldrop.dev/s/sk_example
+sk install https://skilldrop.dev/s/7fx2kaAbCDefGhijkLmNop
 ```
 
 Inspect and verify a snapshot before installing it:
 
 ```sh
-sk inspect https://skilldrop.dev/s/sk_example
+sk inspect https://skilldrop.dev/s/7fx2kaAbCDefGhijkLmNop
 ```
 
 Inspection prints snapshot metadata, the verified bundle checksum, every file's size, checksum and mode, plus a separate executable-file warning list. It never extracts or executes the bundle.

@@ -135,7 +135,7 @@ const WorkerImplementation = Effect.gen(function* () {
           "createSnapshot",
           Effect.fn("createSnapshot")(function* () {
             const request = yield* HttpServerRequest;
-            const id = `sk_${nanoid(22)}` as SnapshotId;
+            const id = nanoid(22) as SnapshotId;
             const protocol = request.headers["x-forwarded-proto"] ?? "http";
             const host =
               request.headers["x-forwarded-host"] ??

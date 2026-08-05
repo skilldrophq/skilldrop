@@ -3,7 +3,7 @@ import * as SchemaTransformation from "effect/SchemaTransformation";
 import * as HttpApiSchema from "effect/unstable/httpapi/HttpApiSchema";
 
 export const SnapshotId = Schema.String.check(
-  Schema.isPattern(/^sk_[A-Za-z0-9_-]{22}$/),
+  Schema.isPattern(/^(?:sk_)?[A-Za-z0-9_-]{22}$/),
 );
 export type SnapshotId = typeof SnapshotId.Type;
 

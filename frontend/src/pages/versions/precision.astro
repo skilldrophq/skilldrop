@@ -4,7 +4,7 @@ import "../../styles/precision.css";
 
 const installCommand = "curl -fsSL https://getsk.dev/install.sh | sh";
 const shareCommand = "sk share ~/.claude/skills/review-pr";
-const snapshotUrl = "skilldrop.dev/s/sk_7fx2ka";
+const snapshotUrl = "skilldrop.dev/s/7fx2ka";
 const installMethods = [
   { label: "Install script", command: installCommand },
   { label: "npm", command: "npm install @skilldrophq/cli" },
@@ -106,14 +106,14 @@ const installMethods = [
             <div class="p-step-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 4.5 6v5.5c0 4.2 3.1 7.9 7.5 9.5 4.4-1.6 7.5-5.3 7.5-9.5V6z"></path><path d="m9 12 2 2 4-4"></path></svg></div>
             <h3>Inspect the snapshot</h3>
             <p>Review the manifest, file tree, checksums and executable files before anything is installed.</p>
-            <code><span>$</span> sk inspect sk_7fx2ka</code>
+            <code><span>$</span> sk inspect 7fx2ka</code>
           </article>
           <article>
             <span class="p-step-number">03</span>
             <div class="p-step-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"></path><path d="M12 7v8m0 0 3-3m-3 3-3-3"></path></svg></div>
             <h3>Install where it belongs</h3>
             <p>Skilldrop detects supported agents and installs the snapshot into the right skills directory.</p>
-            <code><span>$</span> sk install sk_7fx2ka</code>
+            <code><span>$</span> sk install 7fx2ka</code>
           </article>
         </div>
       </section>
@@ -137,7 +137,7 @@ const installMethods = [
             <p class="p-overline">Trust the contents</p>
             <h2 id="safety-title">Open the box<br />before you<br />install it.</h2>
             <p>Every link is an immutable snapshot. Inspect every file, script, checksum and destination before anything lands on your machine.</p>
-            <button type="button" data-copy="sk inspect sk_7fx2ka">Copy inspect command <span aria-hidden="true">→</span></button>
+            <button type="button" data-copy="sk inspect 7fx2ka">Copy inspect command <span aria-hidden="true">→</span></button>
           </div>
 
           <div class="p-manifest">

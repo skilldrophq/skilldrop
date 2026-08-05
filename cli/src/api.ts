@@ -3,7 +3,7 @@ import { FetchHttpClient, HttpClient, HttpClientRequest, HttpClientResponse } fr
 import { SkillManifest } from "./archive.ts"
 import { CliError, messageFromCause } from "./errors.ts"
 
-const SnapshotId = Schema.String.check(Schema.isPattern(/^sk_[A-Za-z0-9_-]{22}$/))
+const SnapshotId = Schema.String.check(Schema.isPattern(/^(?:sk_)?[A-Za-z0-9_-]{22}$/))
 
 class CreatedSnapshot extends Schema.Class<CreatedSnapshot>("CreatedSnapshot")({
   id: SnapshotId,
@@ -84,7 +84,7 @@ export class SkilldropApi extends Context.Service<SkilldropApi, {
 }
 
 export const parseSnapshotId = (input: string): Effect.Effect<string, CliError> => {
-  const candidate = input.match(/(?:^|\/)(sk_[A-Za-z0-9_-]{22})(?:\/)?$/)?.[1] ?? input
+  const candidate = input.match(/(?:^|\/)((?:sk_)?[A-Za-z0-9_-]{22})(?:\/)?$/)?.[1] ?? input
   return Schema.decodeUnknownEffect(SnapshotId)(candidate).pipe(
     Effect.mapError(() => new CliError({ message: `Invalid Skilldrop snapshot: ${input}` }))
   )
