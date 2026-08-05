@@ -1,0 +1,31 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+---
+
+<DocsLayout
+  title="Inspect agent skills before installing"
+  description="Verify a shared agent skill snapshot, review its file manifest, checksums, modes, and executable warnings, without extracting or executing the bundle."
+  eyebrow="Inspect"
+>
+  <h2>Verify a snapshot</h2>
+  <p>Use the full Skilldrop URL or its snapshot ID. Inspection downloads the manifest and bundle, verifies their checksums, and prints the result.</p>
+  <pre><code>sk inspect https://skilldrop.dev/s/7fx2kaA
+# or
+sk inspect 7fx2kaA</code></pre>
+
+  <h2>What inspection shows</h2>
+  <ul>
+    <li>Snapshot metadata and the verified bundle checksum.</li>
+    <li>Every file path, byte size, SHA-256 digest, and mode.</li>
+    <li>A separate warning list for executable files.</li>
+  </ul>
+  <p>Inspection never extracts the bundle and never executes scripts from the skill. Treat the output as a review boundary: understand the instructions and files before installing them.</p>
+
+  <h2>When to stop</h2>
+  <p>Do not install when the skill includes unexpected executables, asks for credentials it should not need, or contains instructions unrelated to its stated purpose. Ask the sender to explain the snapshot or publish a corrected one.</p>
+
+  <div class="docs-next">
+    <a href="/security/">Read the security model →</a>
+    <a href="/docs/install-agent-skills/">Install a verified skill →</a>
+  </div>
+</DocsLayout>

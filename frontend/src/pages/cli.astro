@@ -1,0 +1,38 @@
+---
+import DocsLayout from "../layouts/DocsLayout.astro";
+---
+
+<DocsLayout
+  title="Skilldrop CLI reference"
+  description="Reference for the sk share, inspect, install, and setup commands, including agent selection, project and global scopes, non-interactive installs, and copy mode."
+  eyebrow="CLI reference"
+>
+  <h2><code>sk share</code></h2>
+  <p>Create an immutable snapshot from a directory containing a root <code>SKILL.md</code>.</p>
+  <pre><code>sk share &lt;path&gt;
+sk share ~/.claude/skills/review-pr</code></pre>
+
+  <h2><code>sk inspect</code></h2>
+  <p>Verify and inspect a shared snapshot without installing, extracting, or executing it. Accepts a snapshot URL or ID.</p>
+  <pre><code>sk inspect &lt;snapshot-url-or-id&gt;</code></pre>
+
+  <h2><code>sk install</code></h2>
+  <p>Verify and install a snapshot into one or more supported agent directories.</p>
+  <pre><code>sk install &lt;snapshot-url-or-id&gt; [options]</code></pre>
+  <ul>
+    <li><code>--agent, -a &lt;name&gt;</code>: choose an agent; repeat for multiple agents.</li>
+    <li><code>--scope project|global</code>: choose the installation scope.</li>
+    <li><code>--yes, -y</code>: accept detected defaults and skip confirmation.</li>
+    <li><code>--copy</code>: copy into every agent directory instead of linking to one canonical installation.</li>
+  </ul>
+
+  <h2><code>sk setup</code></h2>
+  <p>Install the bundled <code>use-skilldrop</code> skill so your coding agent knows how to operate the CLI. It accepts the same agent, scope, confirmation, and copy options as <code>sk install</code>.</p>
+  <pre><code>sk setup
+sk setup --yes</code></pre>
+
+  <div class="docs-next">
+    <a href="/docs/">Quick start →</a>
+    <a href="/security/">Security model →</a>
+  </div>
+</DocsLayout>

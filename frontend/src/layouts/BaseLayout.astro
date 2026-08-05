@@ -7,7 +7,10 @@ interface Props {
   bodyClass?: string;
   favicon?: string;
   socialImage?: string;
+  socialImageAlt?: string;
   themeColor?: string;
+  robots?: string;
+  structuredData?: Record<string, unknown> | ReadonlyArray<Record<string, unknown>>;
 }
 
 const {
@@ -15,11 +18,24 @@ const {
   description,
   bodyClass,
   favicon = "/favicon.svg",
-  socialImage = "/social-card.svg",
+  socialImage = "/social-card.png",
+  socialImageAlt = "Skilldrop — share local agent skills without a repository",
   themeColor = "#f7f1e8",
+  robots = "index, follow, max-image-preview:large",
+  structuredData = [],
 } = Astro.props;
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 const analyticsDebugSite = import.meta.env.DEV ? "skilldrop.dev" : undefined;
+const websiteSchema = {
+  "@type": "WebSite",
+  "@id": "https://skilldrop.dev/#website",
+  url: "https://skilldrop.dev/",
+  name: "Skilldrop",
+  description: "Share local agent skills as immutable, inspectable snapshots.",
+  inLanguage: "en",
+};
+const pageSchemas = Array.isArray(structuredData) ? structuredData : [structuredData];
+const schemaGraph = { "@context": "https://schema.org", "@graph": [websiteSchema, ...pageSchemas] };
 ---
 
 <!doctype html>
@@ -28,6 +44,7 @@ const analyticsDebugSite = import.meta.env.DEV ? "skilldrop.dev" : undefined;
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="description" content={description} />
+    <meta name="robots" content={robots} />
     <meta name="theme-color" content={themeColor} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -38,14 +55,20 @@ const analyticsDebugSite = import.meta.env.DEV ? "skilldrop.dev" : undefined;
     <link rel="canonical" href={canonicalURL} />
     <link rel="icon" type="image/svg+xml" href={favicon} />
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Skilldrop" />
     <meta property="og:url" content={canonicalURL} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:image" content={new URL(socialImage, Astro.site)} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={socialImageAlt} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={new URL(socialImage, Astro.site)} />
+    <meta name="twitter:image:alt" content={socialImageAlt} />
+    <script type="application/ld+json" is:inline set:html={JSON.stringify(schemaGraph)}></script>
     <script
       is:inline
       defer

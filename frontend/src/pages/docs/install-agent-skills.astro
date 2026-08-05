@@ -1,0 +1,27 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+---
+
+<DocsLayout
+  title="Install agent skills"
+  description="Install a verified Skilldrop snapshot into project or global skill directories for Claude Code, Codex, Cursor, and other supported coding agents."
+  eyebrow="Install"
+>
+  <h2>Install from a snapshot</h2>
+  <p>Skilldrop verifies the snapshot before writing files, detects installed agents, and asks where the skill should live.</p>
+  <pre><code>sk install https://skilldrop.dev/s/7fx2kaA</code></pre>
+
+  <h2>Choose agents and scope</h2>
+  <p>Interactive installation lets you select agents and choose a project or global scope. For an explicit, repeatable command, pass the relevant flags.</p>
+  <pre><code>sk install 7fx2kaA --agent claude-code --agent codex --scope project
+sk install 7fx2kaA --agent codex --scope global --yes</code></pre>
+  <p>When multiple agent directories are selected, Skilldrop installs one canonical copy and links the other destinations. Add <code>--copy</code> when each destination must receive an independent copy.</p>
+
+  <h2>Existing files</h2>
+  <p>Before installation, the CLI lists destinations and any paths that will be overwritten. Without <code>--yes</code>, it asks for confirmation. Inspect the snapshot first when you did not create it yourself.</p>
+
+  <div class="docs-next">
+    <a href="/guides/claude-code-to-codex/">Move a skill from Claude Code to Codex →</a>
+    <a href="/cli/">CLI flags and commands →</a>
+  </div>
+</DocsLayout>

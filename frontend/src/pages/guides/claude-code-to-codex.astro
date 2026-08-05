@@ -1,0 +1,28 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+---
+
+<DocsLayout
+  title="Move a Claude Code skill to Codex"
+  description="Transfer a local Claude Code skill to Codex with an inspectable Skilldrop snapshot instead of manually copying folders or creating a repository."
+  eyebrow="Cross-agent guide"
+>
+  <h2>Share from Claude Code</h2>
+  <p>Point <code>sk share</code> at the Claude Code skill directory that contains <code>SKILL.md</code>.</p>
+  <pre><code>sk share ~/.claude/skills/review-pr</code></pre>
+  <p>Keep the returned URL. It identifies the exact immutable snapshot you just created.</p>
+
+  <h2>Review the transfer</h2>
+  <p>On the destination machine, inspect the snapshot before installing it. This verifies the bundle and reveals agent-specific assumptions in the files.</p>
+  <pre><code>sk inspect https://skilldrop.dev/s/7fx2kaA</code></pre>
+
+  <h2>Install for Codex</h2>
+  <p>Select Codex explicitly and choose whether this skill belongs to the current project or your global environment.</p>
+  <pre><code>sk install 7fx2kaA --agent codex --scope global</code></pre>
+  <p class="docs-note"><strong>Cross-agent does not mean automatically portable.</strong> Review tool names, paths, and instructions inside the skill. Skilldrop transfers the files faithfully; it does not rewrite their behavior.</p>
+
+  <div class="docs-next">
+    <a href="/docs/install-agent-skills/">Installation options →</a>
+    <a href="/security/">Security model →</a>
+  </div>
+</DocsLayout>

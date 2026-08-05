@@ -1,0 +1,30 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+---
+
+<DocsLayout
+  title="Skilldrop documentation"
+  description="Install the sk CLI, share a local agent skill, inspect the immutable snapshot, and install it for Claude Code, Codex, or another supported agent."
+  eyebrow="Quick start"
+>
+  <h2 id="install">Install the CLI</h2>
+  <p>Install the <code>sk</code> CLI with the dedicated script served from <a href="https://getsk.dev/install.sh">getsk.dev</a>.</p>
+  <pre><code>curl -fsSL https://getsk.dev/install.sh | sh
+sk --help</code></pre>
+
+  <h2>Share, inspect, install</h2>
+  <p>The whole transfer is three commands. Sharing creates a new immutable snapshot; inspecting verifies it without extracting or executing it.</p>
+  <pre><code>sk share ~/.claude/skills/review-pr
+sk inspect https://skilldrop.dev/s/7fx2kaA
+sk install https://skilldrop.dev/s/7fx2kaA</code></pre>
+  <p class="docs-note"><strong>Snapshot, not package.</strong> Sharing the same folder again creates a different link. Skilldrop does not publish the skill to a marketplace or require a repository.</p>
+
+  <h2>Supported agents</h2>
+  <p>Skilldrop detects AiderDesk, Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot, Goose, OpenCode, OpenHands, and the universal <code>.agents/skills</code> directory.</p>
+  <p>Run <code>sk setup</code> to install the bundled Skilldrop skill so a supported coding agent knows how to use the CLI.</p>
+
+  <div class="docs-next">
+    <a href="/docs/share-agent-skills/">Share an agent skill →</a>
+    <a href="/cli/">Browse every CLI command →</a>
+  </div>
+</DocsLayout>

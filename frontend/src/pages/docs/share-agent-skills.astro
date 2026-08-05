@@ -1,0 +1,30 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+---
+
+<DocsLayout
+  title="Share local agent skills"
+  description="Use sk share to turn a local Claude Code, Codex, Cursor, or compatible agent skill folder into an immutable link without creating a Git repository."
+  eyebrow="Share"
+>
+  <h2>Share a skill folder</h2>
+  <p>Pass the directory that contains the root <code>SKILL.md</code>. You can use an explicit path or a skill directory already on your machine.</p>
+  <pre><code>sk share ~/.claude/skills/review-pr</code></pre>
+  <p>Skilldrop validates the folder, builds a compressed bundle, uploads it, and returns a short snapshot URL plus the matching install command.</p>
+
+  <h2>What gets shared</h2>
+  <p>The snapshot contains the files inside the selected skill directory. Its manifest records each file’s path, size, mode, and SHA-256 digest. The bundle itself also receives a SHA-256 checksum.</p>
+  <p class="docs-note"><strong>Every share is immutable.</strong> Edit the local folder and run <code>sk share</code> again when you want a new snapshot. The old link does not change.</p>
+
+  <h2>Before you send the link</h2>
+  <ul>
+    <li>Keep credentials, tokens, private keys, and unrelated project files outside the skill folder.</li>
+    <li>Check that <code>SKILL.md</code> explains required tools and environment assumptions.</li>
+    <li>Inspect the returned snapshot yourself when the contents are sensitive or executable.</li>
+  </ul>
+
+  <div class="docs-next">
+    <a href="/docs/inspect-agent-skills/">Inspect the snapshot →</a>
+    <a href="/guides/share-skills-with-a-team/">Team-sharing workflow →</a>
+  </div>
+</DocsLayout>

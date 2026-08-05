@@ -1,0 +1,33 @@
+---
+import DocsLayout from "../layouts/DocsLayout.astro";
+---
+
+<DocsLayout
+  title="Agent skill installation security"
+  description="Understand how Skilldrop validates paths, rejects unsafe archive entries, verifies SHA-256 checksums, reports executables, and avoids automatic script execution."
+  eyebrow="Security model"
+>
+  <h2>Inspect before install</h2>
+  <p>Agent skills are instructions and files that can influence powerful local tools. Skilldrop keeps review separate from installation with <code>sk inspect</code>, which verifies and displays a snapshot without extracting or executing it.</p>
+
+  <h2>Archive validation</h2>
+  <p>Before a snapshot is accepted or installed, Skilldrop validates the bundle and its manifest. The implementation rejects unsafe paths and link entries designed to escape the target directory.</p>
+  <ul>
+    <li>Absolute paths and path traversal are rejected.</li>
+    <li>Symbolic and hard links are rejected.</li>
+    <li>Duplicate paths and files missing from the manifest are rejected.</li>
+    <li>Bundle and file SHA-256 checksums are verified.</li>
+  </ul>
+
+  <h2>Executable files</h2>
+  <p>Inspection reports executable files separately so they cannot hide in a larger file tree. Skilldrop never automatically executes a script contained in a skill. You remain responsible for reviewing instructions before allowing an agent to use them.</p>
+
+  <h2>Snapshot privacy and lifetime</h2>
+  <p>Snapshot URLs are unlisted transfer links, not access-controlled secrets. Anyone with a URL can retrieve its contents. Do not upload credentials or material that must remain confidential.</p>
+  <p>Shared snapshots are immutable and stored for a limited lifetime. A corrected share produces a new URL rather than changing the existing artifact.</p>
+
+  <div class="docs-next">
+    <a href="/docs/inspect-agent-skills/">Inspect a snapshot →</a>
+    <a href="https://github.com/rawnly/skilldrop">Review the source →</a>
+  </div>
+</DocsLayout>

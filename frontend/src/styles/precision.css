@@ -49,7 +49,8 @@
 .p-kicker, .p-overline { margin: 0; color: var(--p-orange); text-transform: uppercase; letter-spacing: .14em; font-size: .64rem; font-weight: 750; }
 .p-kicker { display: flex; align-items: center; gap: .55rem; }
 .p-kicker span { width: 7px; height: 7px; border-radius: 50%; background: var(--p-orange); box-shadow: 0 0 0 5px color-mix(in oklch, var(--p-orange) 13%, transparent); }
-.p-hero h1 { margin: 1.4rem 0 0; font: 500 clamp(4rem, 7vw, 7rem)/.88 var(--p-serif); letter-spacing: -.06em; }
+.p-hero h1 { margin: 1.4rem 0 0; font: 500 clamp(4rem, 6vw, 6rem)/.88 var(--p-serif); letter-spacing: -.06em; }
+.p-hero h1 > span { display: inline-block; white-space: nowrap; }
 .p-hero h1 em { color: var(--p-muted); font-weight: 400; }
 .p-lede { max-width: 35rem; margin: 2rem 0 0; color: var(--p-muted); font-size: clamp(1rem, 1.5vw, 1.16rem); line-height: 1.65; letter-spacing: -.02em; }
 .p-actions { display: flex; gap: .75rem; margin-top: 2rem; }
@@ -135,8 +136,8 @@
 .p-safety .p-overline { color: oklch(0.5 0.02 300); }
 .p-safety h2 { margin-top: 1.4rem; }
 .p-safety-copy > p:last-of-type { max-width: 32rem; margin: 2rem 0; color: oklch(0.45 0.02 300); line-height: 1.7; }
-.p-safety-copy button { padding: 0 0 .3rem; border: 0; border-bottom: 1px solid oklch(0.8 0.01 300); background: transparent; cursor: pointer; font-size: .75rem; font-weight: 730; }
-.p-safety-copy button span { color: var(--p-orange); margin-left: .5rem; }
+.p-safety-link { display: inline-block; padding-bottom: .3rem; border-bottom: 1px solid oklch(0.8 0.01 300); font-size: .75rem; font-weight: 730; }
+.p-safety-link span { color: var(--p-orange); margin-left: .5rem; }
 .p-manifest { border: 1px solid oklch(0.82 0.01 300); border-radius: 1rem; background: oklch(0.94 0.006 85); box-shadow: 18px 18px 0 var(--p-orange); overflow: hidden; }
 .p-manifest-head { height: 48px; padding: 0 1rem; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid oklch(0.82 0.01 300); font: .61rem var(--p-code); }
 .p-manifest-head strong { display: flex; align-items: center; gap: .45rem; text-transform: uppercase; font-size: .56rem; }

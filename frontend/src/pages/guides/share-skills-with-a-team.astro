@@ -1,0 +1,27 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+---
+
+<DocsLayout
+  title="Share agent skills with your team"
+  description="Use immutable Skilldrop links to review and test a local agent skill with teammates before promoting it into a maintained Git repository."
+  eyebrow="Team workflow"
+>
+  <h2>Send the exact skill you tested</h2>
+  <p>Create a snapshot from the working folder and share the returned URL in the review context your team already uses.</p>
+  <pre><code>sk share ./skills/release-check
+# Share the returned https://skilldrop.dev/s/... link</code></pre>
+
+  <h2>Review before rollout</h2>
+  <p>Ask recipients to run <code>sk inspect</code> first. The manifest and checksums make feedback refer to one exact artifact, even while you continue editing the local copy.</p>
+  <p>When feedback requires changes, create a new snapshot and post the new link. Do not describe it as a version upgrade: each link is an independent snapshot.</p>
+
+  <h2>Promote proven skills</h2>
+  <p>Skilldrop is the transfer layer before formal publication. Once a skill becomes shared infrastructure, move it into your team repository, add ownership and tests, and use your normal review and release workflow.</p>
+  <p class="docs-note"><strong>No discovery pressure.</strong> A Skilldrop link transfers a skill; it does not list it in a public catalog or turn it into a long-lived package.</p>
+
+  <div class="docs-next">
+    <a href="/docs/share-agent-skills/">Sharing details →</a>
+    <a href="/docs/inspect-agent-skills/">Inspection workflow →</a>
+  </div>
+</DocsLayout>

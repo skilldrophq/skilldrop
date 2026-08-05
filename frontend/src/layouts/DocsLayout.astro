@@ -1,0 +1,80 @@
+---
+import BaseLayout from "./BaseLayout.astro";
+import "../styles/docs.css";
+
+interface Props {
+  title: string;
+  description: string;
+  eyebrow: string;
+}
+
+const { title, description, eyebrow } = Astro.props;
+const currentPath = Astro.url.pathname.endsWith("/") ? Astro.url.pathname : `${Astro.url.pathname}/`;
+const isCurrentPage = (href: string) => currentPath === href;
+const articleSchema = {
+  "@type": "TechArticle",
+  headline: title,
+  description,
+  url: new URL(Astro.url.pathname, Astro.site).toString(),
+  inLanguage: "en",
+};
+---
+
+<BaseLayout
+  title={`${title} — Skilldrop`}
+  description={description}
+  bodyClass="docs-body"
+  themeColor="#f2eadf"
+  structuredData={articleSchema}
+>
+  <a class="docs-skip" href="#content">Skip to content</a>
+  <header class="docs-header docs-wrap">
+    <a class="docs-brand" href="/" aria-label="Skilldrop home">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M5.5 9.5h21v16h-21z"></path><path d="M16 3.5v14m0 0 5-5m-5 5-5-5"></path></svg>
+      <span>Skilldrop</span>
+    </a>
+    <span class="docs-divider" aria-hidden="true"></span>
+    <a class="docs-section" href="/docs/">Documentation</a>
+    <nav aria-label="Documentation navigation">
+      <a href="/cli/">CLI</a>
+      <a href="/security/">Security</a>
+      <a class="docs-install" href="/docs/#install">Install sk</a>
+    </nav>
+  </header>
+
+  <div class="docs-shell docs-wrap">
+    <aside class="docs-sidebar" aria-label="Documentation sections">
+      <p>Start</p>
+      <a href="/docs/" aria-current={isCurrentPage("/docs/") ? "page" : undefined}>Quick start</a>
+      <a href="/docs/share-agent-skills/" aria-current={isCurrentPage("/docs/share-agent-skills/") ? "page" : undefined}>Share agent skills</a>
+      <a href="/docs/inspect-agent-skills/" aria-current={isCurrentPage("/docs/inspect-agent-skills/") ? "page" : undefined}>Inspect snapshots</a>
+      <a href="/docs/install-agent-skills/" aria-current={isCurrentPage("/docs/install-agent-skills/") ? "page" : undefined}>Install agent skills</a>
+      <p>Reference</p>
+      <a href="/cli/" aria-current={isCurrentPage("/cli/") ? "page" : undefined}>CLI commands</a>
+      <a href="/security/" aria-current={isCurrentPage("/security/") ? "page" : undefined}>Security model</a>
+      <p>Guides</p>
+      <a href="/guides/claude-code-to-codex/" aria-current={isCurrentPage("/guides/claude-code-to-codex/") ? "page" : undefined}>Claude Code to Codex</a>
+      <a href="/guides/share-skills-with-a-team/" aria-current={isCurrentPage("/guides/share-skills-with-a-team/") ? "page" : undefined}>Share with a team</a>
+    </aside>
+
+    <main id="content" class="docs-content">
+      <header class="docs-hero">
+        <p>{eyebrow}</p>
+        <h1>{title}</h1>
+        <div class="docs-lede">{description}</div>
+      </header>
+      <article class="docs-prose">
+        <slot />
+      </article>
+    </main>
+  </div>
+
+  <footer class="docs-footer docs-wrap">
+    <p>Skilldrop moves the skill you already have.</p>
+    <nav aria-label="Footer navigation">
+      <a href="https://github.com/rawnly/skilldrop">Source on GitHub</a>
+      <a href="https://getsk.dev/install.sh">Install script</a>
+      <a href="/">Home</a>
+    </nav>
+  </footer>
+</BaseLayout>

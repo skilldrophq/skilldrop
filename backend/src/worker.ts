@@ -43,6 +43,7 @@ export interface WebsiteAssets {
 }
 
 const MIN_PUBLIC_ID_LENGTH = 7;
+const NO_INDEX_HEADER = "noindex, nofollow, noarchive";
 
 const snapshotKey = (id: string) => `snapshots/${id}.tar.gz`;
 const snapshotAliasKey = (id: SnapshotId) => `aliases/${id}`;
@@ -297,6 +298,7 @@ const WorkerImplementation = Effect.gen(function* () {
         FileSystem.Size(MAX_COMPRESSED_BUNDLE_BYTES),
       ),
       Effect.catchCause(recoverRespondableCause),
+      Effect.map(HttpServerResponse.setHeader("x-robots-tag", NO_INDEX_HEADER)),
     ),
   };
 }).pipe(Effect.provide(Cloudflare.R2.ReadWriteBucketBinding));

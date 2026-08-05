@@ -7,16 +7,30 @@ const shareCommand = "sk share ~/.claude/skills/review-pr";
 const snapshotUrl = "skilldrop.dev/s/7fx2kaA";
 const installMethods = [
   { label: "Install script", command: installCommand },
-  { label: "npm", command: "npm install @skilldrophq/cli" },
+  { label: "npm", command: "npm install --global @skilldrophq/cli" },
   { label: "Homebrew", command: "brew install skilldrophq/tap/skilldrop" },
 ];
+const isDesignPreview = Astro.url.pathname.startsWith("/versions/");
+const softwareSchema = {
+  "@type": "SoftwareApplication",
+  "@id": "https://skilldrop.dev/#software",
+  name: "Skilldrop",
+  alternateName: "sk",
+  applicationCategory: "DeveloperApplication",
+  operatingSystem: "Linux, macOS, Windows",
+  url: "https://skilldrop.dev/",
+  downloadUrl: "https://getsk.dev/install.sh",
+  description: "A CLI for sharing local agent skills as immutable, inspectable snapshots without requiring a Git repository.",
+};
 ---
 
 <BaseLayout
-  title="Skilldrop — Share local agent skills in seconds"
-  description="Turn any local agent skill into an immutable, inspectable link. No repository, account, or publishing workflow required."
+  title="Share Local Agent Skills in Seconds — Skilldrop"
+  description="Turn any local Claude Code, Codex, or compatible agent skill into an immutable link teammates can inspect and install—no Git repository required."
   bodyClass="precision-body"
   themeColor="#0b0b0d"
+  robots={isDesignPreview ? "noindex, nofollow" : undefined}
+  structuredData={softwareSchema}
 >
   <a class="p-skip" href="#main">Skip to content</a>
 
@@ -31,8 +45,8 @@ const installMethods = [
       </a>
 
       <nav class="p-nav" aria-label="Primary navigation">
-        <a href="#workflow">How it works</a>
-        <a href="#safety">Safety</a>
+        <a href="/docs/">Docs</a>
+        <a href="/security/">Security</a>
         <a class="p-nav-cta" href="#install">Install sk <span aria-hidden="true">↗</span></a>
       </nav>
     </header>
@@ -42,8 +56,8 @@ const installMethods = [
         <div class="p-hero-glow" aria-hidden="true"></div>
         <div class="p-hero-copy">
           <p class="p-kicker"><span></span> Agent skill transfer</p>
-          <h1 id="p-hero-title">Your skill,<br /><em>in their<br />terminal.</em></h1>
-          <p class="p-lede">Turn any local agent skill into a link someone else can inspect and install. No repository required.</p>
+          <h1 id="p-hero-title"><span>Share local</span><br /><span>agent skills.</span><br /><em>In their terminal.</em></h1>
+          <p class="p-lede">Turn a Claude Code, Codex, or compatible local agent skill into a link teammates can inspect and install. No Git repository required.</p>
           <div class="p-actions">
             <a class="p-button p-button-primary" href="#install">Install sk <span aria-hidden="true">→</span></a>
             <a class="p-button p-button-quiet" href="#workflow">See the workflow</a>
@@ -97,21 +111,21 @@ const installMethods = [
           <article>
             <span class="p-step-number">01</span>
             <div class="p-step-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7h16v12H4zM8 4h8"></path><path d="M12 15V8m0 0-3 3m3-3 3 3"></path></svg></div>
-            <h3>Share a folder</h3>
+            <h3><a href="/docs/share-agent-skills/">Share a folder</a></h3>
             <p>Run <code>sk share</code> on any skill directory. Skilldrop validates its contents and creates an immutable snapshot.</p>
             <code><span>$</span> sk share review-pr</code>
           </article>
           <article>
             <span class="p-step-number">02</span>
             <div class="p-step-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 4.5 6v5.5c0 4.2 3.1 7.9 7.5 9.5 4.4-1.6 7.5-5.3 7.5-9.5V6z"></path><path d="m9 12 2 2 4-4"></path></svg></div>
-            <h3>Inspect the snapshot</h3>
+            <h3><a href="/docs/inspect-agent-skills/">Inspect the snapshot</a></h3>
             <p>Review the manifest, file tree, checksums and executable files before anything is installed.</p>
             <code><span>$</span> sk inspect 7fx2kaA</code>
           </article>
           <article>
             <span class="p-step-number">03</span>
             <div class="p-step-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"></path><path d="M12 7v8m0 0 3-3m-3 3-3-3"></path></svg></div>
-            <h3>Install where it belongs</h3>
+            <h3><a href="/docs/install-agent-skills/">Install where it belongs</a></h3>
             <p>Skilldrop detects supported agents and installs the snapshot into the right skills directory.</p>
             <code><span>$</span> sk install 7fx2kaA</code>
           </article>
@@ -137,7 +151,7 @@ const installMethods = [
             <p class="p-overline">Trust the contents</p>
             <h2 id="safety-title">Open the box<br />before you<br />install it.</h2>
             <p>Every link is an immutable snapshot. Inspect every file, script, checksum and destination before anything lands on your machine.</p>
-            <button type="button" data-copy="sk inspect 7fx2kaA">Copy inspect command <span aria-hidden="true">→</span></button>
+            <a class="p-safety-link" href="/security/">Read the security model <span aria-hidden="true">→</span></a>
           </div>
 
           <div class="p-manifest">
@@ -185,7 +199,7 @@ const installMethods = [
             </button>
           </div>
         </div>
-        <small><a href="https://getsk.dev/install.sh">View install script</a></small>
+        <small><a href="https://getsk.dev/install.sh">View install script</a> or <a href="/docs/">read the quick start</a></small>
       </section>
     </main>
 
@@ -195,7 +209,7 @@ const installMethods = [
         <span>Skilldrop</span>
       </a>
       <p>Move skills, not setup instructions.</p>
-      <nav aria-label="Footer navigation"><a href="#workflow">Workflow</a><a href="#safety">Safety</a><a href="/versions/light">Previous design</a></nav>
+      <nav aria-label="Footer navigation"><a href="/docs/">Docs</a><a href="/cli/">CLI reference</a><a href="/security/">Security</a><a href="https://github.com/rawnly/skilldrop">Source</a></nav>
       <small>© {new Date().getFullYear()} skilldrop.dev</small>
     </footer>
 

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://skilldrop.dev/sitemap.xml
