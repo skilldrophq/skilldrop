@@ -23,7 +23,7 @@ const shareCommand = "sk share ~/.claude/skills/review-pr";
     <nav aria-label="Primary navigation">
       <a href="#how-it-works">How it works</a>
       <a href="#safety">Safety</a>
-      <a class="nav-install" href="#install">Install <span aria-hidden="true">↘</span></a>
+      <a class="nav-install" href="#install">Install sk <span aria-hidden="true">↘</span></a>
     </nav>
   </header>
 
@@ -37,11 +37,11 @@ const shareCommand = "sk share ~/.claude/skills/review-pr";
         </p>
 
         <div class="hero-actions">
-          <a class="button button-primary" href="#install">Install the CLI <span aria-hidden="true">↓</span></a>
+          <a class="button button-primary" href="#install">Install sk <span aria-hidden="true">↓</span></a>
           <a class="text-link" href="#how-it-works">See the 20-second workflow <span aria-hidden="true">→</span></a>
         </div>
 
-        <p class="hero-note">No account · No Git required · Snapshots expire automatically</p>
+        <p class="hero-note">No account · No repository required · Snapshots expire automatically</p>
       </div>
 
       <div class="transfer-demo" aria-label="Terminal demonstration of sharing a skill">
@@ -110,7 +110,7 @@ const shareCommand = "sk share ~/.claude/skills/review-pr";
           <h3>Inspect before it touches your setup.</h3>
           <p>See every file, checksum, executable warning, target agent, and destination before installing.</p>
           <div class="inspection">
-            <div><span class="inspection-icon safe">✓</span><span>SKILL.md</span><small>verified</small></div>
+            <div><span class="inspection-icon safe">✓</span><span>SKILL.md</span><small>checksum matched</small></div>
             <div><span class="inspection-icon">⌁</span><span>2 regular files</span><small>4.9 KB</small></div>
             <div><span class="inspection-icon">#</span><span>Bundle checksum</span><small>matches</small></div>
             <div><span class="inspection-icon">↯</span><span>Executable scripts</span><small>none</small></div>
@@ -120,7 +120,7 @@ const shareCommand = "sk share ~/.claude/skills/review-pr";
         <article class="workflow-step">
           <div class="step-meta"><span>03</span><span>Installed</span></div>
           <h3>Drop it into the right agent.</h3>
-          <p>The CLI detects supported agents and puts the verified skill where it belongs. Scripts are never run automatically.</p>
+          <p>The CLI detects supported agents and puts the snapshot where it belongs. Scripts are never run automatically.</p>
           <div class="code-block" data-copy-root>
             <code><span class="code-prompt">$</span> sk install skilldrop.dev/s/sk_7fx2ka</code>
             <button class="copy-button" type="button" data-copy="sk install skilldrop.dev/s/sk_7fx2ka" aria-label="Copy install command">
@@ -156,11 +156,11 @@ const shareCommand = "sk share ~/.claude/skills/review-pr";
         </div>
 
         <div class="manifest-card">
-          <div class="manifest-top"><span>skilldrop.manifest</span><span>verified ✓</span></div>
+          <div class="manifest-top"><span>skilldrop.manifest</span><span>integrity verified ✓</span></div>
           <dl>
             <div><dt>Snapshot</dt><dd>sk_7fx2ka</dd></div>
             <div><dt>Created</dt><dd>just now</dd></div>
-            <div><dt>Expires</dt><dd>in 90 days</dd></div>
+            <div><dt>Expires</dt><dd>in 7 days</dd></div>
             <div><dt>Contents</dt><dd>2 regular files</dd></div>
             <div><dt>Symlinks</dt><dd class="good">rejected</dd></div>
             <div><dt>Auto-execution</dt><dd class="good">never</dd></div>
@@ -196,7 +196,7 @@ const shareCommand = "sk share ~/.claude/skills/review-pr";
         <span>Skilldrop</span>
       </a>
       <p>Move skills, not setup instructions.</p>
-      <div class="footer-links"><a href="#how-it-works">How it works</a><a href="#safety">Safety</a><a href="https://getsk.dev/install.sh">Install</a></div>
+      <div class="footer-links"><a href="#how-it-works">How it works</a><a href="#safety">Safety</a><a href="https://getsk.dev/install.sh">Install sk</a></div>
       <p class="copyright">© {new Date().getFullYear()} Skilldrop · skilldrop.dev</p>
     </div>
   </footer>

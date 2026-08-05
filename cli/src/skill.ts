@@ -73,7 +73,14 @@ export const buildSkillBundle = Effect.fn("buildSkillBundle")(function*(input: s
 
   yield* visit(root)
   const skill = entries.find((entry) => entry.path === "SKILL.md")
-  if (skill === undefined || skill.content.byteLength === 0) {
+  if (skill === undefined) {
+    return yield* new CliError({ message: "Skill must contain a non-empty root SKILL.md" })
+  }
+  const skillMarkdown = yield* Effect.try({
+    try: () => new TextDecoder("utf-8", { fatal: true }).decode(skill.content),
+    catch: () => new CliError({ message: "SKILL.md must be valid UTF-8" })
+  })
+  if (skillMarkdown.trim() === "") {
     return yield* new CliError({ message: "Skill must contain a non-empty root SKILL.md" })
   }
   const manifest = new SkillManifest({ protocol_version: 1, name: decodedName, files: manifestFiles })

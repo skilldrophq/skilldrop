@@ -1,5 +1,9 @@
 import { expect, test } from "bun:test";
-import { InvalidSnapshotError, readSnapshot } from "./snapshot";
+import {
+  InvalidSnapshotError,
+  MAX_COMPRESSED_BUNDLE_BYTES,
+  readSnapshot,
+} from "./snapshot";
 
 const BLOCK = 512;
 const encoder = new TextEncoder();
@@ -43,16 +47,30 @@ const tar = (entries: ReadonlyArray<readonly [string, string]>) => {
 const gzip = async (data: Uint8Array) =>
   new Uint8Array(await new Response(new Blob([data]).stream().pipeThrough(new CompressionStream("gzip"))).arrayBuffer());
 
+const sha256 = async (content: string) => {
+  const digest = await crypto.subtle.digest("SHA-256", encoder.encode(content));
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+};
+
+const manifest = async (files: ReadonlyArray<readonly [string, string]>) => JSON.stringify({
+  protocol_version: 1,
+  name: "review-pr",
+  files: await Promise.all(files.map(async ([path, content]) => ({
+    path,
+    size: encoder.encode(content).byteLength,
+    sha256: await sha256(content),
+  }))),
+});
+
 test("reads a valid skill snapshot", async () => {
-  const bundle = await gzip(tar([
-    ["SKILL.md", "# Review pull requests\n"],
-    ["skilldrop.manifest.json", '{"protocol_version":1,"files":[]}'],
-  ]));
+  const files = [["SKILL.md", "# Review pull requests\n"]] as const;
+  const bundle = await gzip(tar([...files, ["skilldrop.manifest.json", await manifest(files)]]));
 
   const snapshot = await readSnapshot(bundle);
 
   expect(snapshot.skillMarkdown).toBe("# Review pull requests\n");
-  expect(snapshot.manifest).toEqual({ protocol_version: 1, files: [] });
+  expect(snapshot.manifest.name).toBe("review-pr");
+  expect(snapshot.manifest.files).toHaveLength(1);
   expect(snapshot.sha256).toHaveLength(64);
 });
 
@@ -66,4 +84,20 @@ test("rejects unsafe archive paths", async () => {
   const bundle = await gzip(tar([["../SKILL.md", "# Unsafe\n"], ["skilldrop.manifest.json", "{}"]]));
 
   await expect(readSnapshot(bundle)).rejects.toBeInstanceOf(InvalidSnapshotError);
+});
+
+test("rejects files that do not match the manifest", async () => {
+  const declared = [["SKILL.md", "# Original\n"]] as const;
+  const bundle = await gzip(tar([
+    ["SKILL.md", "# Replaced\n"],
+    ["skilldrop.manifest.json", await manifest(declared)],
+  ]));
+
+  await expect(readSnapshot(bundle)).rejects.toThrow("checksum is invalid");
+});
+
+test("rejects compressed bundles over 10 MiB", async () => {
+  const bundle = new Uint8Array(MAX_COMPRESSED_BUNDLE_BYTES + 1);
+
+  await expect(readSnapshot(bundle)).rejects.toThrow("compressed size limit");
 });

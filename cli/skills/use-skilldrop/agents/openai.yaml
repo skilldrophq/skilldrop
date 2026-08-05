@@ -1,0 +1,4 @@
+interface:
+  display_name: "Use Skilldrop"
+  short_description: "Share and install skills with the sk CLI"
+  default_prompt: "Use $use-skilldrop to share or install an agent skill with the sk CLI."

@@ -11,6 +11,19 @@ const run = <A, E>(effect: Effect.Effect<A, E, NodeServices.NodeServices | Scope
   Effect.runPromise(effect.pipe(Effect.provide(NodeServices.layer), Effect.scoped))
 
 describe("skill bundles", () => {
+  test("packages the bundled Skilldrop CLI skill", async () => {
+    const skillPath = new URL("../skills/use-skilldrop", import.meta.url)
+    const bundle = await run(buildSkillBundle(skillPath.pathname))
+    const hash = await run(sha256(bundle.bytes))
+    const verified = await run(verifySkillBundle(bundle.bytes, hash))
+
+    expect(verified.manifest.name).toBe("use-skilldrop")
+    expect(verified.files.map((file) => file.path)).toEqual([
+      "SKILL.md",
+      "agents/openai.yaml"
+    ])
+  })
+
   test("builds, verifies, and installs a skill without running its scripts", async () => {
     const result = await run(Effect.gen(function*() {
       const fs = yield* FileSystem.FileSystem

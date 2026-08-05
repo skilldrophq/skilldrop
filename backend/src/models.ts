@@ -7,8 +7,19 @@ export const SnapshotId = Schema.String.check(
 );
 export type SnapshotId = typeof SnapshotId.Type;
 
-export const Manifest = Schema.Record(Schema.String, Schema.Json);
-export type Manifest = typeof Manifest.Type;
+export class ManifestFile extends Schema.Class<ManifestFile>("ManifestFile")({
+  path: Schema.String,
+  size: Schema.Natural,
+  sha256: Schema.String.check(Schema.isPattern(/^[a-f0-9]{64}$/)),
+}) {}
+
+export class Manifest extends Schema.Class<Manifest>("Manifest")({
+  protocol_version: Schema.Literal(1),
+  name: Schema.String.check(
+    Schema.isPattern(/^(?!\.{1,2}$)[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/),
+  ),
+  files: Schema.Array(ManifestFile),
+}) {}
 
 export class CreatedSnapshot extends Schema.Class<CreatedSnapshot>("CreatedSnapshot")({
   id: SnapshotId,

@@ -85,7 +85,7 @@ These are the most important rules embodied by the current code:
 | Component | Source | Owns |
 | --- | --- | --- |
 | CLI process bootstrap | `cli/src/main.ts` | Runtime layers, configuration, logging, top-level CLI error rendering |
-| CLI command coordinator | `cli/src/commands.ts` | `share` and `install` user journeys, prompts, selection, and console output |
+| CLI command coordinator | `cli/src/commands.ts` | `share`, `inspect`, `install`, and bundled-skill `setup` journeys, prompts, selection, and console output |
 | CLI HTTP client | `cli/src/api.ts` | Snapshot API URLs, status expectations, response decoding, network error mapping |
 | Agent registry/resolver | `cli/src/agents.ts` | Known agent paths, installed-agent detection, scope resolution, canonical/target roots |
 | Skill lifecycle | `cli/src/skill.ts` | Source traversal, bundle construction, bundle verification, staged install, symlink/copy behavior |
@@ -127,6 +127,7 @@ These are the most important rules embodied by the current code:
 skilldrop/
 ├── cli/                      TypeScript/Effect CLI package
 │   ├── src/                  commands, API client, archive and install logic
+│   ├── skills/               bundled first-party agent skills
 │   ├── test/                 unit and lifecycle tests
 │   └── scripts/              release/formula helper
 ├── backend/                  Cloudflare Worker and Alchemy stack
@@ -321,7 +322,9 @@ not to print an additional error report.
 | Command | Important flags | Behavior |
 | --- | --- | --- |
 | `sk share <path>` | Development-only `--api-url` | Validates and packages one directory, creates an ID, uploads the bundle, prints its link |
+| `sk inspect <snapshot>` | Development-only `--api-url` | Downloads and verifies the bundle, then prints metadata, every file checksum and mode, and executable warnings without installing |
 | `sk install <snapshot>` | repeatable `--agent/-a`, `--scope`, `--yes/-y`, `--copy`; development-only `--api-url` | Fetches metadata and bundle, verifies both, selects destinations, confirms, and installs |
+| `sk setup` | repeatable `--agent/-a`, `--scope`, `--yes/-y`, `--copy` | Validates and installs the bundled `use-skilldrop` skill; `--yes` defaults to global scope |
 
 The snapshot argument accepts either a bare `sk_<22 chars>` ID or a URL/path
 whose final segment is that ID.
@@ -651,9 +654,10 @@ Not currently covered in-repository:
 
 ### 14.3 Release artifact chain
 
-The CLI package is `@skilldrop/cli`, versioned independently with a `cli-vX.Y.Z`
+The CLI package is `@skilldrophq/cli`, versioned independently with a `cli-vX.Y.Z`
 Git tag. `prepack` runs check, tests, and build. The npm package publishes
-`dist/` and `README.md`, exposes `dist/sk.js` as `sk`, and requires Node 20+.
+`dist/`, `skills/`, and `README.md`, exposes `dist/sk.js` as `sk`, and requires
+Node 20+.
 
 The Homebrew formula downloads that npm tarball, installs it under `libexec`,
 and symlinks `dist/sk.js` into Homebrew's `bin/sk`.
@@ -679,10 +683,10 @@ ideas. The following are not present in the current code:
 | Stated or implied capability | Current implementation |
 | --- | --- |
 | Go/Cobra CLI | CLI is TypeScript/Effect, built for Node |
-| `sk list`, `sk inspect`, `sk remove` | Only `share` and `install` exist |
+| `sk list`, `sk remove` | `inspect` now exists; `list` and `remove` do not |
 | Share by known skill name | `share` accepts a filesystem path only |
-| Display every file before installation | Install summary displays the file count and destinations, not the file list |
-| Executable warnings/manifest flag | Modes are preserved, but the manifest lacks an executable field and no warning is printed |
+| Display every file before installation | `inspect` displays every file; install itself displays only the file count and destinations |
+| Executable warnings/manifest flag | `inspect` derives warnings from verified archive modes; the manifest still lacks an executable field |
 | Expiration and `expires_at` | No expiry metadata, cron, or `410 Gone` behavior |
 | Private snapshots/accounts | No identity or authorization system |
 | Dedicated one-time upload capability | Upload authority is the not-yet-published snapshot ID itself |
@@ -695,9 +699,8 @@ ideas. The following are not present in the current code:
 | `getsk.dev/install.sh` installer | Referenced by website copy, not implemented in this repository |
 
 There is also content drift in the landing page examples: some display
-`skilldrop.io`, a 90-day expiry, `sk inspect`, and executable/file disclosure
-claims that the current runtime does not provide. The configured canonical site
-and API origin are `skilldrop.dev`.
+`skilldrop.io` and a 90-day expiry that the current runtime does not provide.
+The configured canonical site and API origin are `skilldrop.dev`.
 
 ## 17. Change map: where a future contributor should work
 

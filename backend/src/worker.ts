@@ -2,19 +2,23 @@ import * as Cloudflare from "alchemy/Cloudflare";
 import type * as AlchemyOutput from "alchemy/Output";
 import * as Cause from "effect/Cause";
 import * as Effect from "effect/Effect";
+import * as FileSystem from "effect/FileSystem";
 import * as Layer from "effect/Layer";
 import * as Path from "effect/Path";
 import * as Result from "effect/Result";
 import * as Etag from "effect/unstable/http/Etag";
 import * as HttpPlatform from "effect/unstable/http/HttpPlatform";
 import * as HttpRouter from "effect/unstable/http/HttpRouter";
-import { HttpServerRequest } from "effect/unstable/http/HttpServerRequest";
+import {
+  HttpServerRequest,
+  MaxBodySize,
+} from "effect/unstable/http/HttpServerRequest";
 import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
 import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
 import { nanoid } from "nanoid";
 import { SnapshotApi } from "./api";
-import { Bucket } from "./bucket";
+import { Bucket, SNAPSHOT_LIFETIME_SECONDS } from "./bucket";
 import {
   BadRequest,
   CreatedSnapshot,
@@ -174,7 +178,7 @@ const WorkerImplementation = Effect.gen(function* () {
                 httpMetadata: {
                   contentType: "application/gzip",
                   contentDisposition: 'attachment; filename="bundle.tar.gz"',
-                  cacheControl: "public, max-age=31536000, immutable",
+                  cacheControl: `public, max-age=${SNAPSHOT_LIFETIME_SECONDS}, immutable`,
                 },
               })
               .pipe(Effect.orDie);
@@ -224,7 +228,7 @@ const WorkerImplementation = Effect.gen(function* () {
               contentType: "application/gzip",
               contentLength: object.size,
               headers: {
-                "cache-control": "public, max-age=31536000, immutable",
+                "cache-control": `public, max-age=${SNAPSHOT_LIFETIME_SECONDS}, immutable`,
                 "content-disposition": 'attachment; filename="bundle.tar.gz"',
                 etag: object.httpEtag,
                 "x-content-type-options": "nosniff",
@@ -243,7 +247,13 @@ const WorkerImplementation = Effect.gen(function* () {
   );
 
   return {
-    fetch: fetch.pipe(Effect.catchCause(recoverRespondableCause)),
+    fetch: fetch.pipe(
+      Effect.provideService(
+        MaxBodySize,
+        FileSystem.Size(MAX_COMPRESSED_BUNDLE_BYTES),
+      ),
+      Effect.catchCause(recoverRespondableCause),
+    ),
   };
 }).pipe(Effect.provide(Cloudflare.R2.ReadWriteBucketBinding));
 

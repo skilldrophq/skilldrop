@@ -1,5 +1,5 @@
 {
-  "name": "@skilldrop/cli",
+  "name": "@skilldrophq/cli",
   "version": "0.1.0",
   "description": "Share and install agent skills with Skilldrop",
   "type": "module",
@@ -9,6 +9,7 @@
   },
   "files": [
     "dist",
+    "skills",
     "README.md"
   ],
   "engines": {

@@ -1,6 +1,6 @@
 import * as Data from "effect/Data";
 import * as Schema from "effect/Schema";
-import { Manifest, type Manifest as ManifestType } from "./models";
+import { Manifest } from "./models";
 
 const TAR_BLOCK_SIZE = 512;
 
@@ -8,6 +8,7 @@ export const MAX_COMPRESSED_BUNDLE_BYTES = 10 * 1024 * 1024;
 export const MAX_UNCOMPRESSED_BUNDLE_BYTES = 32 * 1024 * 1024;
 export const MAX_FILES = 256;
 export const MAX_FILE_BYTES = 2 * 1024 * 1024;
+const MANIFEST_PATH = "skilldrop.manifest.json";
 
 export class InvalidSnapshotError extends Data.TaggedError("InvalidSnapshotError")<{
   readonly message: string;
@@ -18,7 +19,7 @@ export class InvalidSnapshotError extends Data.TaggedError("InvalidSnapshotError
 }
 
 export interface Snapshot {
-  readonly manifest: ManifestType;
+  readonly manifest: Manifest;
   readonly sha256: string;
   readonly skillMarkdown: string;
 }
@@ -99,13 +100,25 @@ const sha256 = async (bytes: Uint8Array) => {
 
 export const readSnapshot = async (compressed: Uint8Array): Promise<Snapshot> => {
   const archive = await collectDecompressed(compressed);
-  const files = new Set<string>();
+  const files = new Map<string, Uint8Array>();
   let skillMarkdown: string | undefined;
-  let manifest: ManifestType | undefined;
+  let manifest: Manifest | undefined;
+  let foundEnd = false;
 
   for (let offset = 0; offset + TAR_BLOCK_SIZE <= archive.byteLength;) {
     const header = archive.slice(offset, offset + TAR_BLOCK_SIZE);
-    if (isZeroBlock(header)) break;
+    if (isZeroBlock(header)) {
+      const remainder = archive.slice(offset);
+      if (
+        remainder.byteLength < TAR_BLOCK_SIZE * 2 ||
+        !isZeroBlock(remainder.slice(TAR_BLOCK_SIZE, TAR_BLOCK_SIZE * 2)) ||
+        !isZeroBlock(remainder)
+      ) {
+        throw new InvalidSnapshotError("Archive has an invalid end marker");
+      }
+      foundEnd = true;
+      break;
+    }
     if (!validHeaderChecksum(header)) {
       throw new InvalidSnapshotError("Archive contains an entry with an invalid checksum");
     }
@@ -121,38 +134,60 @@ export const readSnapshot = async (compressed: Uint8Array): Promise<Snapshot> =>
     if (!validPath(path) || contentOffset + paddedSize > archive.byteLength) {
       throw new InvalidSnapshotError("Archive contains an unsafe or truncated path");
     }
-    if (type !== "0" && type !== "\0" && type !== "5") {
-      throw new InvalidSnapshotError("Archive may contain only regular files and directories");
+    if (type !== "0" && type !== "\0") {
+      throw new InvalidSnapshotError("Archive may contain only regular files");
     }
-    if (type !== "5") {
-      if (size > MAX_FILE_BYTES) throw new InvalidSnapshotError("Archive contains an oversized file");
-      if (files.has(path)) throw new InvalidSnapshotError("Archive contains duplicate paths");
-      files.add(path);
-      const content = archive.slice(contentOffset, contentOffset + size);
-      if (path === "SKILL.md") {
-        try {
-          skillMarkdown = decoder.decode(content);
-        } catch {
-          throw new InvalidSnapshotError("SKILL.md must be valid UTF-8");
-        }
+    if (size > MAX_FILE_BYTES) throw new InvalidSnapshotError("Archive contains an oversized file");
+    if (files.has(path)) throw new InvalidSnapshotError("Archive contains duplicate paths");
+    const content = archive.slice(contentOffset, contentOffset + size);
+    files.set(path, content);
+    if (path === "SKILL.md") {
+      try {
+        skillMarkdown = decoder.decode(content);
+      } catch {
+        throw new InvalidSnapshotError("SKILL.md must be valid UTF-8");
       }
-      if (path === "skilldrop.manifest.json") {
-        try {
-          manifest = Schema.decodeUnknownSync(Manifest)(JSON.parse(decoder.decode(content)));
-        } catch {
-          throw new InvalidSnapshotError("skilldrop.manifest.json must contain a JSON object");
-        }
-      }
-      if (files.size > MAX_FILES) throw new InvalidSnapshotError("Archive contains too many files");
     }
+    if (path === MANIFEST_PATH) {
+      try {
+        manifest = Schema.decodeUnknownSync(Manifest)(JSON.parse(decoder.decode(content)));
+      } catch {
+        throw new InvalidSnapshotError(`${MANIFEST_PATH} does not match protocol version 1`);
+      }
+    }
+    if (files.size > MAX_FILES) throw new InvalidSnapshotError("Archive contains too many files");
     offset = contentOffset + paddedSize;
   }
 
+  if (!foundEnd) throw new InvalidSnapshotError("Archive has no end marker");
   if (skillMarkdown === undefined || skillMarkdown.trim() === "") {
     throw new InvalidSnapshotError("Archive must contain a non-empty root SKILL.md");
   }
   if (manifest === undefined) {
     throw new InvalidSnapshotError("Archive must contain a root skilldrop.manifest.json");
+  }
+
+  const bundledFiles = new Map(files);
+  bundledFiles.delete(MANIFEST_PATH);
+  if (manifest.files.length !== bundledFiles.size) {
+    throw new InvalidSnapshotError("Archive file list does not match its manifest");
+  }
+  const manifestPaths = new Set<string>();
+  for (const expected of manifest.files) {
+    if (!validPath(expected.path) || expected.path === MANIFEST_PATH) {
+      throw new InvalidSnapshotError("Manifest contains an invalid file path");
+    }
+    if (manifestPaths.has(expected.path)) {
+      throw new InvalidSnapshotError("Manifest contains duplicate file paths");
+    }
+    manifestPaths.add(expected.path);
+    const content = bundledFiles.get(expected.path);
+    if (content === undefined || content.byteLength !== expected.size) {
+      throw new InvalidSnapshotError(`File does not match its manifest: ${expected.path}`);
+    }
+    if ((await sha256(content)) !== expected.sha256) {
+      throw new InvalidSnapshotError(`File checksum is invalid: ${expected.path}`);
+    }
   }
 
   return { skillMarkdown, manifest, sha256: await sha256(compressed) };
