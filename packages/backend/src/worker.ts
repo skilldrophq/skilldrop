@@ -24,6 +24,7 @@ import {
   type CanonicalSnapshotId,
   CreatedSnapshot,
   InvalidSnapshot,
+  NotFound,
   PayloadTooLarge,
   SnapshotConflict,
   type SnapshotId,
@@ -280,6 +281,30 @@ const WorkerImplementation = Effect.gen(function* () {
               },
             });
           }),
+        )
+        .handle(
+          "install",
+          Effect.fn("install")(function* ({ request }) {
+            yield* Effect.try({
+              try: () => new URL(request.originalUrl),
+              catch: () => new NotFound(),
+            }).pipe(
+              Effect.map((uri) => uri.hostname),
+              Effect.filterOrElse(
+                (hostname) => /getsk\.dev/.test(hostname),
+                () => Effect.fail(new NotFound()),
+              ),
+              Effect.tapError(() =>
+                Effect.logError("tried to install on wrong domain").pipe(
+                  Effect.annotateLogs({ url: request.url }),
+                ),
+              ),
+            );
+
+            yield* Effect.log("install");
+
+            return HttpServerResponse.text("hello");
+          }),
         ),
   );
 
@@ -322,7 +347,7 @@ export const makeWorker = ({ directory, domain, hash }: WebsiteAssets) =>
         assets: {
           directory,
           hash,
-          runWorkerFirst: ["/s/*", "/v1/*"],
+          runWorkerFirst: ["/s/*", "/v1/*", "/install.sh"],
         },
       }),
     ),

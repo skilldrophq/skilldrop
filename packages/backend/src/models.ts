@@ -26,7 +26,9 @@ export class Manifest extends Schema.Class<Manifest>("Manifest")({
   files: Schema.Array(ManifestFile),
 }) {}
 
-export class CreatedSnapshot extends Schema.Class<CreatedSnapshot>("CreatedSnapshot")({
+export class CreatedSnapshot extends Schema.Class<CreatedSnapshot>(
+  "CreatedSnapshot",
+)({
   id: SnapshotId,
   upload_url: Schema.String,
 }) {}
@@ -35,7 +37,9 @@ export const CreatedSnapshotResponse = CreatedSnapshot.pipe(
   HttpApiSchema.status("Created"),
 );
 
-export class SnapshotMetadata extends Schema.Class<SnapshotMetadata>("SnapshotMetadata")({
+export class SnapshotMetadata extends Schema.Class<SnapshotMetadata>(
+  "SnapshotMetadata",
+)({
   id: SnapshotId,
   size: Schema.Finite,
   sha256: Schema.String,
@@ -43,25 +47,45 @@ export class SnapshotMetadata extends Schema.Class<SnapshotMetadata>("SnapshotMe
   uploaded_at: Schema.String,
 }) {}
 
-export class BadRequest extends Schema.TaggedErrorClass<BadRequest>()("BadRequest", {
-  message: Schema.String,
-}) {}
+export class BadRequest extends Schema.TaggedErrorClass<BadRequest>()(
+  "BadRequest",
+  {
+    message: Schema.String,
+  },
+) {}
 
-export class SnapshotNotFound extends Schema.TaggedErrorClass<SnapshotNotFound>()("SnapshotNotFound", {
-  message: Schema.String,
-}) {}
+export class SnapshotNotFound extends Schema.TaggedErrorClass<SnapshotNotFound>()(
+  "SnapshotNotFound",
+  {
+    message: Schema.String,
+  },
+) {}
 
-export class SnapshotConflict extends Schema.TaggedErrorClass<SnapshotConflict>()("SnapshotConflict", {
-  message: Schema.String,
-}) {}
+export class SnapshotConflict extends Schema.TaggedErrorClass<SnapshotConflict>()(
+  "SnapshotConflict",
+  {
+    message: Schema.String,
+  },
+) {}
 
-export class PayloadTooLarge extends Schema.TaggedErrorClass<PayloadTooLarge>()("PayloadTooLarge", {
-  message: Schema.String,
-}) {}
+export class PayloadTooLarge extends Schema.TaggedErrorClass<PayloadTooLarge>()(
+  "PayloadTooLarge",
+  {
+    message: Schema.String,
+  },
+) {}
 
-export class InvalidSnapshot extends Schema.TaggedErrorClass<InvalidSnapshot>()("InvalidSnapshot", {
-  message: Schema.String,
-}) {}
+export class InvalidSnapshot extends Schema.TaggedErrorClass<InvalidSnapshot>()(
+  "InvalidSnapshot",
+  {
+    message: Schema.String,
+  },
+) {}
+
+export class NotFound extends Schema.TaggedErrorClass<NotFound>()(
+  "NotFound",
+  {},
+) {}
 
 export const BadRequestResponse = Schema.String.pipe(
   Schema.decodeTo(
