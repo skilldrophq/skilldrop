@@ -9,7 +9,7 @@ export default Alchemy.Stack(
   "Skilldrop",
   {
     providers: Cloudflare.providers(),
-    state: Alchemy.localState(),
+    state: Cloudflare.state(),
   },
   Effect.gen(function* () {
     const stage = yield* Alchemy.Stage;
