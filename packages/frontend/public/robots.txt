@@ -1,4 +1,9 @@
 User-agent: *
 Allow: /
+Allow: /docs/
+Allow: /guides/
+Allow: /cli/
+Allow: /security/
+Disallow: /versions/
 
 Sitemap: https://skilldrop.dev/sitemap.xml

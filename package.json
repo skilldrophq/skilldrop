@@ -8,6 +8,7 @@
     "packages/*"
   ],
   "scripts": {
+    "deploy": "bun run --cwd packages/backend deploy",
     "build:cli": "bun run --cwd packages/cli build",
     "test:cli": "bun run --cwd packages/cli test",
     "check:cli": "bun run --cwd packages/cli check"

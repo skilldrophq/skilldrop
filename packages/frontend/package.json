@@ -14,6 +14,6 @@
   },
   "devDependencies": {
     "@astrojs/check": "latest",
-    "typescript": "latest"
+    "typescript": "^5.9"
   }
 }
