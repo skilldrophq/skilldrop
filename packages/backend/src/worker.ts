@@ -17,6 +17,7 @@ import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondab
 import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
 import { nanoid } from "nanoid";
+import installScript from "../public/install.sh?raw";
 import { SnapshotApi } from "./api";
 import { Bucket, SNAPSHOT_LIFETIME_SECONDS } from "./bucket";
 import {
@@ -303,7 +304,9 @@ const WorkerImplementation = Effect.gen(function* () {
 
             yield* Effect.log("install");
 
-            return HttpServerResponse.text("hello");
+            return HttpServerResponse.text(installScript, {
+              contentType: "text/x-shellscript",
+            });
           }),
         ),
   );
