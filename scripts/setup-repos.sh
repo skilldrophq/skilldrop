@@ -13,12 +13,6 @@ fi
 
 mkdir -p repos
 
-if [[ -e repos/skills ]]; then
-  echo "Skipping repos/skills: already present."
-else
-  git subtree add --prefix=repos/skills https://github.com/vercel-labs/skills main --squash
-fi
-
 if [[ -e repos/effect ]]; then
   echo "Skipping repos/effect: already present."
 else
