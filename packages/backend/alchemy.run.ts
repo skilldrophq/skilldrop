@@ -21,7 +21,13 @@ export default Alchemy.Stack(
     const bucket = yield* Bucket;
     const worker = yield* makeWorker({
       directory: website.outdir,
-      domain: stage === "prod" ? "skilldrop.dev" : undefined,
+      domain:
+        stage === "prod"
+          ? {
+              name: "skilldrop.dev",
+              aliases: ["getsk.dev"],
+            }
+          : undefined,
       hash: website.hash.output.as<string>(),
     });
 

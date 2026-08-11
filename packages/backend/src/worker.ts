@@ -42,7 +42,7 @@ import {
 export interface WebsiteAssets {
   readonly directory: string | AlchemyOutput.Output<string>;
   readonly hash: string | AlchemyOutput.Output<string>;
-  readonly domain?: string;
+  readonly domain?: string | Cloudflare.WorkerDomainConfig;
 }
 
 const MIN_PUBLIC_ID_LENGTH = 7;
