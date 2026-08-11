@@ -343,7 +343,10 @@ const WorkerImplementation = Effect.gen(function* () {
       Effect.map(HttpServerResponse.setHeader("x-robots-tag", NO_INDEX_HEADER)),
     ),
   };
-}).pipe(Effect.provide(Cloudflare.R2.ReadWriteBucketBinding));
+}).pipe(
+  Effect.provide(Cloudflare.R2.ReadWriteBucketBinding),
+  Effect.provide(Cloudflare.AnalyticsEngine.WriteDatasetBinding),
+);
 
 export class SkilldropWorker extends Cloudflare.Worker<
   SkilldropWorker,
