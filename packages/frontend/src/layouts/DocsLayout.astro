@@ -24,14 +24,16 @@ const articleSchema = {
   title={`${title} — Skilldrop`}
   description={description}
   bodyClass="docs-body"
-  themeColor="#f2eadf"
+  themeColor="#0A0B0D"
+  favicon="/favicon-dark.svg"
+  socialImage="/social-card-dark.svg"
   structuredData={articleSchema}
 >
   <a class="docs-skip" href="#content">Skip to content</a>
   <header class="docs-header docs-wrap">
     <a class="docs-brand" href="/" aria-label="Skilldrop home">
       <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M5.5 9.5h21v16h-21z"></path><path d="M16 3.5v14m0 0 5-5m-5 5-5-5"></path></svg>
-      <span>Skilldrop</span>
+      <span>skilldrop</span><code>v0.1</code>
     </a>
     <span class="docs-divider" aria-hidden="true"></span>
     <a class="docs-section" href="/docs/">Documentation</a>
@@ -55,6 +57,7 @@ const articleSchema = {
       <p>Guides</p>
       <a href="/guides/claude-code-to-codex/" aria-current={isCurrentPage("/guides/claude-code-to-codex/") ? "page" : undefined}>Claude Code to Codex</a>
       <a href="/guides/share-skills-with-a-team/" aria-current={isCurrentPage("/guides/share-skills-with-a-team/") ? "page" : undefined}>Share with a team</a>
+      <div class="docs-sidebar-status"><span></span><code>docs online</code></div>
     </aside>
 
     <main id="content" class="docs-content">
@@ -70,11 +73,49 @@ const articleSchema = {
   </div>
 
   <footer class="docs-footer docs-wrap">
-    <p>Skilldrop moves the skill you already have.</p>
+    <p><strong>skilldrop</strong> moves the skill you already have. <code>exit 0</code></p>
     <nav aria-label="Footer navigation">
-      <a href="https://github.com/rawnly/skilldrop">Source on GitHub</a>
+      <a href="https://github.com/skilldrophq/skilldrop">Source on GitHub</a>
       <a href="https://getsk.dev/install.sh">Install script</a>
       <a href="/">Home</a>
     </nav>
   </footer>
+
+  <div class="docs-toast" role="status" aria-live="polite">Copied to clipboard</div>
+
+  <script>
+    const toast = document.querySelector<HTMLElement>(".docs-toast");
+    let toastTimeout: number | undefined;
+
+    document.querySelectorAll<HTMLPreElement>(".docs-prose pre").forEach((pre) => {
+      const frame = document.createElement("div");
+      frame.className = "docs-code-frame";
+      const surface = document.createElement("div");
+      surface.className = "docs-code-surface";
+      const chrome = document.createElement("div");
+      chrome.className = "docs-code-chrome";
+      chrome.innerHTML = "<span>command · shell</span><small>sh</small>";
+      const copy = document.createElement("button");
+      copy.type = "button";
+      copy.className = "docs-code-copy";
+      copy.setAttribute("aria-label", "Copy command");
+      copy.innerHTML = "<span>copy</span><b aria-hidden=\"true\">✓ copied</b>";
+
+      pre.parentNode?.insertBefore(frame, pre);
+      frame.append(surface);
+      surface.append(chrome, pre);
+      chrome.append(copy);
+
+      copy.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(pre.textContent ?? "");
+          copy.classList.add("is-copied");
+          toast?.classList.add("is-visible");
+          window.clearTimeout(toastTimeout);
+          toastTimeout = window.setTimeout(() => toast?.classList.remove("is-visible"), 1600);
+          window.setTimeout(() => copy.classList.remove("is-copied"), 1600);
+        } catch { window.prompt("Copy this command:", pre.textContent ?? ""); }
+      });
+    });
+  </script>
 </BaseLayout>
