@@ -12,6 +12,7 @@ const manifestPath = "skilldrop.manifest.json"
 
 export interface SkillBundle {
   readonly bytes: Uint8Array
+  readonly id: string
   readonly manifest: SkillManifest
 }
 
@@ -89,11 +90,12 @@ export const buildSkillBundle = Effect.fn("buildSkillBundle")(function*(input: s
   if (archive.byteLength > MAX_UNCOMPRESSED_BYTES) {
     return yield* new CliError({ message: "Skill exceeds the 32 MiB uncompressed limit" })
   }
+  const id = yield* sha256(archive)
   const bytes = yield* gzip(archive)
   if (bytes.byteLength > MAX_COMPRESSED_BYTES) {
     return yield* new CliError({ message: "Skill exceeds the 10 MiB compressed limit" })
   }
-  return { bytes, manifest } satisfies SkillBundle
+  return { bytes, id, manifest } satisfies SkillBundle
 })
 
 export const verifySkillBundle = Effect.fn("verifySkillBundle")(function*(

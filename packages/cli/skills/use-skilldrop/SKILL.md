@@ -17,7 +17,7 @@ sk share <path-to-skill-directory>
 
 Run `sk share` without a path to choose interactively from installed skills. The picker shows whether each skill is project-scoped or global.
 
-Pass the directory containing the root `SKILL.md`, not the Markdown file itself. Report the resulting `https://skilldrop.dev/s/<id>` URL and preserve it exactly. Sharing creates a new immutable snapshot; sharing the same directory again creates another link.
+Pass the directory containing the root `SKILL.md`, not the Markdown file itself. Report the resulting `https://skilldrop.dev/s/<id>` URL and preserve it exactly. Sharing creates a content-addressed immutable snapshot; sharing unchanged content again returns the same link, while changing the content creates a new link.
 
 Before sharing, check that the directory:
 
@@ -63,7 +63,7 @@ Run:
 sk install <snapshot-url-or-id>
 ```
 
-Accept either a Skilldrop URL or its public snapshot ID, which normally has 7 characters and grows only when needed to avoid a collision. Legacy 22-character IDs and IDs beginning with `sk_` remain valid. By default, let the CLI detect agents, prompt for project or global scope, show destinations and replacements, and ask for confirmation.
+Accept either a Skilldrop URL or its public snapshot ID, which normally has 7 hexadecimal characters and grows only when needed to avoid a collision. Legacy base64url IDs, 22-character IDs, and IDs beginning with `sk_` remain valid. By default, let the CLI detect agents, prompt for project or global scope, show destinations and replacements, and ask for confirmation.
 
 Use flags only when the user's intent is clear:
 

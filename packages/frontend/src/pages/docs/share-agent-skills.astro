@@ -17,7 +17,7 @@ sk share ~/.claude/skills/review-pr</code></pre>
 
   <h2>What gets shared</h2>
   <p>The snapshot contains the files inside the selected skill directory. Its manifest records each file’s path, size, mode, and SHA-256 digest. The bundle itself also receives a SHA-256 checksum.</p>
-  <p class="docs-note"><strong>Every share is immutable.</strong> Edit the local folder and run <code>sk share</code> again when you want a new snapshot. The old link does not change.</p>
+  <p class="docs-note"><strong>Every share is immutable and content-addressed.</strong> Sharing unchanged content returns the same link. Edit the local folder and run <code>sk share</code> again when you want a new snapshot; the old link does not change.</p>
 
   <h2>Before you send the link</h2>
   <ul>

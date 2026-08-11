@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test"
 import { NodeServices } from "@effect/platform-node"
 import { Effect, FileSystem, Path } from "effect"
 import type { Scope } from "effect/Scope"
-import { sha256 } from "../src/archive.ts"
+import { gunzip, sha256 } from "../src/archive.ts"
 import { buildSkillBundle, installVerifiedSkill, verifySkillBundle } from "../src/skill.ts"
 
 const encoder = new TextEncoder()
@@ -14,10 +14,15 @@ describe("skill bundles", () => {
   test("packages the bundled Skilldrop CLI skill", async () => {
     const skillPath = new URL("../skills/use-skilldrop", import.meta.url)
     const bundle = await run(buildSkillBundle(skillPath.pathname))
+    const repeated = await run(buildSkillBundle(skillPath.pathname))
     const hash = await run(sha256(bundle.bytes))
+    const contentHash = await run(gunzip(bundle.bytes).pipe(Effect.flatMap(sha256)))
     const verified = await run(verifySkillBundle(bundle.bytes, hash))
 
     expect(verified.manifest.name).toBe("use-skilldrop")
+    expect(bundle.id).toMatch(/^[a-f0-9]{64}$/)
+    expect(bundle.id).toBe(contentHash)
+    expect(repeated.id).toBe(bundle.id)
     expect(verified.files.map((file) => file.path)).toEqual([
       "SKILL.md",
       "agents/openai.yaml"

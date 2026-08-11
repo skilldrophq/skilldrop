@@ -7,7 +7,8 @@ import { CliError, messageFromCause } from "./errors.ts"
 export const SKILLDROP_USER_AGENT = `skilldrop-cli/${pkg.version}`
 export const withSkilldropUserAgent = HttpClientRequest.setHeader("user-agent", SKILLDROP_USER_AGENT)
 
-const SnapshotId = Schema.String.check(Schema.isPattern(/^(?:sk_[A-Za-z0-9_-]{22}|[A-Za-z0-9_-]{7,22})$/))
+const snapshotIdPattern = /^(?:sk_[A-Za-z0-9_-]{22}|[A-Za-z0-9_-]{7,22}|[a-f0-9]{23,64})$/
+const SnapshotId = Schema.String.check(Schema.isPattern(snapshotIdPattern))
 
 class CreatedSnapshot extends Schema.Class<CreatedSnapshot>("CreatedSnapshot")({
   id: SnapshotId,
@@ -33,7 +34,7 @@ const expectStatus = Effect.fn("expectStatus")(function*(response: HttpClientRes
 })
 
 export class SkilldropApi extends Context.Service<SkilldropApi, {
-  create(apiUrl: string): Effect.Effect<CreatedSnapshot, CliError>
+  create(apiUrl: string, snapshotId: string): Effect.Effect<CreatedSnapshot, CliError>
   upload(uploadUrl: string, bytes: Uint8Array): Effect.Effect<void, CliError>
   metadata(apiUrl: string, id: string): Effect.Effect<SnapshotMetadata, CliError>
   download(apiUrl: string, id: string): Effect.Effect<Uint8Array, CliError>
@@ -54,8 +55,12 @@ export class SkilldropApi extends Context.Service<SkilldropApi, {
           throw new CliError({ message: `Invalid Skilldrop API URL: ${apiUrl}` })
         }
       }
-      const create = Effect.fn("SkilldropApi.create")(function*(apiUrl: string) {
-        const response = yield* execute(client.post(endpoint(apiUrl, "/v1/snapshots")))
+      const create = Effect.fn("SkilldropApi.create")(function*(apiUrl: string, snapshotId: string) {
+        const response = yield* HttpClientRequest.post(endpoint(apiUrl, "/v1/snapshots")).pipe(
+          HttpClientRequest.setHeader("x-skilldrop-snapshot-id", snapshotId),
+          client.execute,
+          execute
+        )
         yield* expectStatus(response, 201)
         return yield* HttpClientResponse.schemaBodyJson(CreatedSnapshot)(response).pipe(
           Effect.mapError(() => new CliError({ message: "Skilldrop returned an invalid create response" }))
@@ -90,7 +95,7 @@ export class SkilldropApi extends Context.Service<SkilldropApi, {
 }
 
 export const parseSnapshotId = (input: string): Effect.Effect<string, CliError> => {
-  const candidate = input.match(/(?:^|\/)(sk_[A-Za-z0-9_-]{22}|[A-Za-z0-9_-]{7,22})(?:\/)?$/)?.[1] ?? input
+  const candidate = input.match(/(?:^|\/)(sk_[A-Za-z0-9_-]{22}|[A-Za-z0-9_-]{7,22}|[a-f0-9]{23,64})(?:\/)?$/)?.[1] ?? input
   return Schema.decodeUnknownEffect(SnapshotId)(candidate).pipe(
     Effect.mapError(() => new CliError({ message: `Invalid Skilldrop snapshot: ${input}` }))
   )

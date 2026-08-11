@@ -3,12 +3,14 @@ import * as SchemaTransformation from "effect/SchemaTransformation";
 import * as HttpApiSchema from "effect/unstable/httpapi/HttpApiSchema";
 
 export const SnapshotId = Schema.String.check(
-  Schema.isPattern(/^(?:sk_[A-Za-z0-9_-]{22}|[A-Za-z0-9_-]{7,22})$/),
+  Schema.isPattern(
+    /^(?:sk_[A-Za-z0-9_-]{22}|[A-Za-z0-9_-]{7,22}|[a-f0-9]{23,64})$/,
+  ),
 );
 export type SnapshotId = typeof SnapshotId.Type;
 
 export const CanonicalSnapshotId = Schema.String.check(
-  Schema.isPattern(/^[A-Za-z0-9_-]{22}$/),
+  Schema.isPattern(/^(?:[A-Za-z0-9_-]{22}|[a-f0-9]{64})$/),
 );
 export type CanonicalSnapshotId = typeof CanonicalSnapshotId.Type;
 

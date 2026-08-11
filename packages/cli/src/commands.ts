@@ -97,7 +97,7 @@ export const makeCommand = (devMode: boolean) => {
     const api = yield* SkilldropApi
     yield* Console.log(`Validating ${selectedPath}…`)
     const bundle = yield* buildSkillBundle(selectedPath)
-    const created = yield* api.create(apiUrl)
+    const created = yield* api.create(apiUrl, bundle.id)
     yield* api.upload(created.upload_url, bundle.bytes)
     const url = new URL(`/s/${created.id}`, apiUrl).toString()
     yield* Console.log(`Shared ${bundle.manifest.name}`)

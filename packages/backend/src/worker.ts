@@ -52,6 +52,14 @@ const SKILLDROP_CLI_USER_AGENT_PREFIX = "skilldrop-cli/";
 const snapshotKey = (id: string) => `snapshots/${id}.tar.gz`;
 const snapshotAliasKey = (id: SnapshotId) => `aliases/${id}`;
 
+export const isContentAddressedId = (id: CanonicalSnapshotId) =>
+  /^[a-f0-9]{64}$/.test(id);
+
+export const snapshotContentMatchesId = (
+  id: CanonicalSnapshotId,
+  contentSha256: string,
+) => !isContentAddressedId(id) || id === contentSha256;
+
 export const snapshotAliasCandidates = (
   id: CanonicalSnapshotId,
 ): ReadonlyArray<SnapshotId> =>
@@ -191,12 +199,35 @@ const WorkerImplementation = Effect.gen(function* () {
     id: CanonicalSnapshotId,
   ) {
     for (const candidate of snapshotAliasCandidates(id)) {
+      const direct = yield* bucket
+        .get(snapshotKey(candidate))
+        .pipe(Effect.orDie);
+      if (direct !== null) {
+        if (candidate === id) return candidate;
+        continue;
+      }
+      const existing = yield* bucket
+        .get(snapshotAliasKey(candidate))
+        .pipe(Effect.orDie);
+      if (existing !== null) {
+        if ((yield* existing.text().pipe(Effect.orDie)) === id) return candidate;
+        continue;
+      }
       const stored = yield* bucket
         .put(snapshotAliasKey(candidate), id, {
           onlyIf: { etagDoesNotMatch: "*" },
         })
         .pipe(Effect.orDie);
       if (stored !== null) return candidate;
+      const raced = yield* bucket
+        .get(snapshotAliasKey(candidate))
+        .pipe(Effect.orDie);
+      if (
+        raced !== null &&
+        (yield* raced.text().pipe(Effect.orDie)) === id
+      ) {
+        return candidate;
+      }
     }
     return undefined;
   });
@@ -208,13 +239,15 @@ const WorkerImplementation = Effect.gen(function* () {
       handlers
         .handle(
           "createSnapshot",
-          Effect.fn("createSnapshot")(function* () {
+          Effect.fn("createSnapshot")(function* ({ headers }) {
             yield* recordEndpoint("createSnapshot");
             const request = yield* HttpServerRequest;
             let canonicalId: CanonicalSnapshotId;
             let id: SnapshotId | undefined;
             do {
-              canonicalId = nanoid(22) as CanonicalSnapshotId;
+              canonicalId =
+                headers["x-skilldrop-snapshot-id"] ??
+                (nanoid(22) as CanonicalSnapshotId);
               id = yield* reserveSnapshotAlias(canonicalId);
             } while (id === undefined);
             const protocol = request.headers["x-forwarded-proto"] ?? "http";
@@ -255,6 +288,11 @@ const WorkerImplementation = Effect.gen(function* () {
             }
 
             const validation = yield* validateUpload(payload);
+            if (!snapshotContentMatchesId(params.id, validation.contentSha256)) {
+              return yield* new InvalidSnapshot({
+                message: "Snapshot content does not match its ID",
+              });
+            }
             const stored = yield* bucket
               .put(snapshotKey(params.id), payload, {
                 contentLength,
@@ -268,6 +306,7 @@ const WorkerImplementation = Effect.gen(function* () {
               })
               .pipe(Effect.orDie);
             if (stored === null) {
+              if (isContentAddressedId(params.id)) return;
               return yield* new SnapshotConflict({
                 message: "Snapshot already exists",
               });

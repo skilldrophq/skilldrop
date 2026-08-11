@@ -23,6 +23,9 @@ const SnapshotParams = Schema.Struct({ id: SnapshotId });
 const CanonicalSnapshotParams = Schema.Struct({ id: CanonicalSnapshotId });
 
 const createSnapshot = HttpApiEndpoint.post("createSnapshot", "/v1/snapshots", {
+  headers: Schema.Struct({
+    "x-skilldrop-snapshot-id": Schema.optional(CanonicalSnapshotId),
+  }),
   success: CreatedSnapshotResponse,
 });
 

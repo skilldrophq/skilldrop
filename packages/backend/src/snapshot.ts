@@ -21,6 +21,7 @@ export class InvalidSnapshotError extends Data.TaggedError("InvalidSnapshotError
 export interface Snapshot {
   readonly manifest: Manifest;
   readonly sha256: string;
+  readonly contentSha256: string;
   readonly skillMarkdown: string;
 }
 
@@ -190,5 +191,10 @@ export const readSnapshot = async (compressed: Uint8Array): Promise<Snapshot> =>
     }
   }
 
-  return { skillMarkdown, manifest, sha256: await sha256(compressed) };
+  return {
+    skillMarkdown,
+    manifest,
+    sha256: await sha256(compressed),
+    contentSha256: await sha256(archive),
+  };
 };

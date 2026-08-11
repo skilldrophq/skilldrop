@@ -22,7 +22,7 @@ The installed executable is called `sk`. See the [CLI reference](packages/cli/RE
 
 ## Why Skilldrop?
 
-Skilldrop is a transfer layer for skills you already have and want to send to another person, machine, or compatible coding agent. Each share creates a new immutable snapshot of the directory at that moment.
+Skilldrop is a transfer layer for skills you already have and want to send to another person, machine, or compatible coding agent. Each distinct share creates a content-addressed, immutable snapshot of the directory at that moment. Sharing unchanged content again returns the same link.
 
 Before installation, `sk inspect` verifies the bundle and reports its metadata, checksum, file paths, sizes, modes, and executable files. Inspection does not extract or execute the bundle. Skilldrop also validates archive paths and link entries before writing files, and never automatically runs scripts contained in a skill.
 

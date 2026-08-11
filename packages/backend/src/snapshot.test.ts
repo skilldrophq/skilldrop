@@ -72,6 +72,7 @@ test("reads a valid skill snapshot", async () => {
   expect(snapshot.manifest.name).toBe("review-pr");
   expect(snapshot.manifest.files).toHaveLength(1);
   expect(snapshot.sha256).toHaveLength(64);
+  expect(snapshot.contentSha256).toHaveLength(64);
 });
 
 test("rejects archives without a root SKILL.md", async () => {
