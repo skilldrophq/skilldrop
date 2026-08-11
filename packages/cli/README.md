@@ -33,13 +33,13 @@ sk doctor
 Install a shared skill:
 
 ```sh
-sk install https://skilldrop.dev/s/7fx2kaAbCDefGhijkLmNop
+sk install https://skilldrop.dev/s/PL1mY4-71OQ6swagAcabqX
 ```
 
 Inspect and verify a snapshot before installing it:
 
 ```sh
-sk inspect https://skilldrop.dev/s/7fx2kaAbCDefGhijkLmNop
+sk inspect https://skilldrop.dev/s/PL1mY4-71OQ6swagAcabqX
 ```
 
 Inspection prints snapshot metadata, the verified bundle checksum, every file's size, checksum and mode, plus a separate executable-file warning list. It never extracts or executes the bundle.

@@ -12,10 +12,10 @@ npm install --global @skilldrophq/cli
 sk share ~/.claude/skills/review-pr
 
 # Inspect a snapshot before installing it
-sk inspect https://skilldrop.dev/s/7fx2kaA
+sk inspect https://skilldrop.dev/s/PL1mY4-
 
 # Install it
-sk install https://skilldrop.dev/s/7fx2kaA
+sk install https://skilldrop.dev/s/PL1mY4-
 ```
 
 The installed executable is called `sk`. See the [CLI reference](packages/cli/README.md) or run `sk --help` for all options.

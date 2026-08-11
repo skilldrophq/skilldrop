@@ -4,7 +4,7 @@ import { HttpClientRequest } from "effect/unstable/http"
 import pkg from "../package.json" with { type: "json" }
 import { parseSnapshotId, SKILLDROP_USER_AGENT, withSkilldropUserAgent } from "../src/api.ts"
 
-const canonicalId = "7fx2kaAbCDefGhijkLmNop"
+const canonicalId = "PL1mY4-71OQ6swagAcabqX"
 
 describe("snapshot IDs", () => {
   test("parses short and canonical IDs and URLs", async () => {

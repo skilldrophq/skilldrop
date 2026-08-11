@@ -170,7 +170,7 @@ export const makeCommand = (devMode: boolean) => {
     })
   ).pipe(
     Command.withDescription("Verify and inspect a shared skill without installing it"),
-    Command.withExamples([{ command: "sk inspect https://skilldrop.dev/s/7fx2kaA", description: "Inspect a shared skill" }])
+    Command.withExamples([{ command: "sk inspect https://skilldrop.dev/s/PL1mY4-", description: "Inspect a shared skill" }])
   )
 
   const installSkill = Effect.fn("installSkill")(function*(
@@ -280,7 +280,7 @@ export const makeCommand = (devMode: boolean) => {
 ).pipe(
   Command.withDescription("Verify and install a shared skill"),
   Command.withAlias("i"),
-  Command.withExamples([{ command: "sk install https://skilldrop.dev/s/7fx2kaA", description: "Install a shared skill" }])
+  Command.withExamples([{ command: "sk install https://skilldrop.dev/s/PL1mY4-", description: "Install a shared skill" }])
 )
 
   const setup = Command.make(

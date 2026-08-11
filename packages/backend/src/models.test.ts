@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import * as Schema from "effect/Schema";
 import { SnapshotId } from "./models";
 
-const canonicalId = "7fx2kaAbCDefGhijkLmNop";
+const canonicalId = "PL1mY4-71OQ6swagAcabqX";
 
 test("accepts prefix-free snapshot IDs", () => {
   expect(Schema.decodeUnknownSync(SnapshotId)(canonicalId)).toBe(canonicalId);
