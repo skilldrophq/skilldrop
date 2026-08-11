@@ -4,6 +4,11 @@
   "description": "Share and install agent skills with Skilldrop",
   "type": "module",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/skilldrophq/skilldrop.git",
+    "directory": "packages/cli"
+  },
   "bin": {
     "sk": "dist/sk.js"
   },
