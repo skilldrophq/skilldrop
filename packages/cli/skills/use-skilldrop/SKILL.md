@@ -1,6 +1,6 @@
 ---
 name: use-skilldrop
-description: Use the Skilldrop `sk` command-line interface to share local agent skills through immutable links, inspect and verify snapshots, install shared skills, choose agent destinations and installation scope, or install the bundled Skilldrop skill. Use when a user asks to transfer, share, inspect, verify, or install an agent skill with Skilldrop, interpret a Skilldrop URL or snapshot ID, select `sk install` flags, or troubleshoot the `sk` CLI.
+description: Use the Skilldrop `sk` command-line interface to list and validate local agent skills, share them through immutable links, inspect and verify snapshots, install shared skills, choose agent destinations and installation scope, or install the bundled Skilldrop skill. Use when a user asks to transfer, list, validate, share, inspect, verify, or install an agent skill with Skilldrop, interpret a Skilldrop URL or snapshot ID, select `sk install` flags, or troubleshoot the `sk` CLI.
 ---
 
 # Use Skilldrop
@@ -15,6 +15,8 @@ Run:
 sk share <path-to-skill-directory>
 ```
 
+Run `sk share` without a path to choose interactively from installed skills. The picker shows whether each skill is project-scoped or global.
+
 Pass the directory containing the root `SKILL.md`, not the Markdown file itself. Report the resulting `https://skilldrop.dev/s/<id>` URL and preserve it exactly. Sharing creates a new immutable snapshot; sharing the same directory again creates another link.
 
 Before sharing, check that the directory:
@@ -25,6 +27,23 @@ Before sharing, check that the directory:
 - contains no secrets or unrelated private files.
 
 Skilldrop uploads the complete directory. Ask for confirmation before sharing when the user has not clearly authorized an upload.
+
+## List and validate local skills
+
+Run `sk list` to show installed project and global skills, or filter by scope:
+
+```sh
+sk list --scope project
+sk list --scope global
+```
+
+Validate a skill without creating or uploading a snapshot:
+
+```sh
+sk validate <path-to-skill-directory>
+```
+
+Run `sk doctor` to diagnose the local runtime, agent detection, and project or global installation targets. Report failed checks and their suggested fixes exactly.
 
 ## Inspect a shared skill
 

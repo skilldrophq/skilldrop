@@ -14,6 +14,22 @@ The installed binary is `sk`. Share an agent skill:
 sk share ~/.claude/skills/review-pr
 ```
 
+Run `sk share` without a path to choose from installed project and global skills. Validate locally without uploading, or list installed skills and their scope:
+
+```sh
+sk validate ~/.claude/skills/review-pr
+sk list
+sk list --scope project
+```
+
+The list is grouped by agent target. Skills with the same name and scope across multiple targets are shown once under a combined heading, with every installation path retained.
+
+Check the local runtime, detected agents, and project/global installation targets:
+
+```sh
+sk doctor
+```
+
 Install a shared skill:
 
 ```sh

@@ -9,7 +9,10 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
 >
   <h2>Share a skill folder</h2>
   <p>Pass the directory that contains the root <code>SKILL.md</code>. You can use an explicit path or a skill directory already on your machine.</p>
-  <pre><code>sk share ~/.claude/skills/review-pr</code></pre>
+  <pre><code>sk share
+# or
+sk share ~/.claude/skills/review-pr</code></pre>
+  <p>Without a path, Skilldrop lists installed skills and shows whether each one is project-scoped or global. Run <code>sk validate &lt;path&gt;</code> to check a directory without uploading it.</p>
   <p>Skilldrop validates the folder, builds a compressed bundle, uploads it, and returns a short snapshot URL plus the matching install command.</p>
 
   <h2>What gets shared</h2>

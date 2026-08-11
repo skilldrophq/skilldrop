@@ -4,13 +4,27 @@ import DocsLayout from "../layouts/DocsLayout.astro";
 
 <DocsLayout
   title="Skilldrop CLI reference"
-  description="Reference for the sk share, inspect, install, and setup commands, including agent selection, project and global scopes, non-interactive installs, and copy mode."
+  description="Reference for the sk share, validate, list, inspect, install, and setup commands, including agent selection, project and global scopes, non-interactive installs, and copy mode."
   eyebrow="CLI reference"
 >
   <h2><code>sk share</code></h2>
-  <p>Create an immutable snapshot from a directory containing a root <code>SKILL.md</code>.</p>
-  <pre><code>sk share &lt;path&gt;
+  <p>Create an immutable snapshot from a directory containing a root <code>SKILL.md</code>. Omit the path to choose interactively from installed project and global skills.</p>
+  <pre><code>sk share
+sk share &lt;path&gt;
 sk share ~/.claude/skills/review-pr</code></pre>
+
+  <h2><code>sk validate</code></h2>
+  <p>Run the complete local skill validation without creating or uploading a snapshot.</p>
+  <pre><code>sk validate &lt;path&gt;</code></pre>
+
+  <h2><code>sk list</code></h2>
+  <p>List installed project and global skills, grouped by agent target and deduplicated by name and scope. Use <code>--scope project|global</code> to filter the result.</p>
+  <pre><code>sk list
+sk list --scope project</code></pre>
+
+  <h2><code>sk doctor</code></h2>
+  <p>Check Node.js compatibility, detected agents, and whether project and global skill targets are writable or can be created.</p>
+  <pre><code>sk doctor</code></pre>
 
   <h2><code>sk inspect</code></h2>
   <p>Verify and inspect a shared snapshot without installing, extracting, or executing it. Accepts a snapshot URL or ID.</p>

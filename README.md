@@ -45,7 +45,11 @@ brew install <owner>/<tap>/skilldrop
 Useful commands:
 
 ```sh
+sk share                                    # choose an installed skill interactively
 sk share ./my-skill                         # create an immutable snapshot
+sk validate ./my-skill                      # validate without uploading
+sk list                                     # list project and global skills
+sk doctor                                   # diagnose the local environment
 sk inspect <snapshot-url-or-id>             # verify without installing
 sk install <snapshot-url-or-id>             # install interactively
 sk install <snapshot> --agent codex         # choose an agent
@@ -111,4 +115,3 @@ Keep changes scoped to the package they affect and run the relevant checks befor
 ## License and trademarks
 
 The source code is available under the [Apache License 2.0](LICENSE). The Skilldrop name, logos, and brand assets are not licensed under Apache 2.0; see [TRADEMARKS.md](TRADEMARKS.md). Third-party notices are listed in [NOTICE](NOTICE).
-

@@ -4,7 +4,10 @@ import { Argument, Command, Flag, Prompt } from "effect/unstable/cli"
 import { agentNames, detectInstalledAgents, loadAgents, resolveAgentSelection, type Agent, type AgentName } from "./agents.ts"
 import { SkilldropApi, parseSnapshotId } from "./api.ts"
 import { sha256, type ArchiveEntry, type SkillManifest } from "./archive.ts"
+import { renderDoctorReport, runDoctor } from "./doctor.ts"
+import { CliError } from "./errors.ts"
 import { renderSnapshotInspection, verifySnapshot } from "./inspect.ts"
+import { dim, loadInstalledSkills, renderInstalledSkills, skillAgentGroup, type SkillScope } from "./local-skills.ts"
 import { buildSkillBundle, installVerifiedSkill, linkInstalledSkill, verifySkillBundle } from "./skill.ts"
 
 const productionApiUrl = "https://skilldrop.dev"
@@ -44,16 +47,56 @@ export const makeCommand = (devMode: boolean) => {
     return { metadata, verified }
   })
 
+  const agent = Flag.choice("agent", agentNames).pipe(
+    Flag.withAlias("a"),
+    Flag.withDescription("Agent to install for (repeatable)"),
+    Flag.atMost(10)
+  )
+
+  const scope = Flag.choice("scope", ["project", "global"] as const).pipe(
+    Flag.withDescription("Install in this project or globally"),
+    Flag.optional
+  )
+
+  const yes = Flag.boolean("yes").pipe(
+    Flag.withAlias("y"),
+    Flag.withDescription("Accept detected defaults and skip confirmation")
+  )
+
+  const copy = Flag.boolean("copy").pipe(
+    Flag.withDescription("Copy into each agent directory instead of symlinking")
+  )
+
   const share = Command.make(
   "share",
   {
-    path: Argument.string("path").pipe(Argument.withDescription("Path to a skill directory"))
+    path: Argument.string("path").pipe(
+      Argument.withDescription("Path to a skill directory"),
+      Argument.optional
+    )
   },
   Effect.fn("shareCommand")(function*({ path }) {
+    const selectedPath = yield* Option.match(path, {
+      onNone: () => Effect.gen(function*() {
+        const skills = yield* loadInstalledSkills()
+        if (skills.length === 0) {
+          return yield* new CliError({ message: "No installed skills found. Pass a path with: sk share <path>" })
+        }
+        return yield* Prompt.run(Prompt.select({
+          message: "Which skill do you want to share?",
+          choices: skills.map((skill) => ({
+            title: `${skill.name} ${dim(`${skill.scope} · ${skillAgentGroup(skill)}`)}`,
+            description: skill.path,
+            value: skill.path
+          }))
+        }))
+      }),
+      onSome: Effect.succeed
+    })
     const apiUrl = yield* getApiUrl()
     const api = yield* SkilldropApi
-    yield* Console.log(`Validating ${path}…`)
-    const bundle = yield* buildSkillBundle(path)
+    yield* Console.log(`Validating ${selectedPath}…`)
+    const bundle = yield* buildSkillBundle(selectedPath)
     const created = yield* api.create(apiUrl)
     yield* api.upload(created.upload_url, bundle.bytes)
     const url = new URL(`/s/${created.id}`, apiUrl).toString()
@@ -67,6 +110,55 @@ export const makeCommand = (devMode: boolean) => {
   Command.withExamples([{ command: "sk share ~/.claude/skills/review-pr", description: "Share a local skill" }])
 )
 
+  const validate = Command.make(
+    "validate",
+    {
+      path: Argument.string("path").pipe(Argument.withDescription("Path to a skill directory"))
+    },
+    Effect.fn("validateCommand")(function*({ path }) {
+      const bundle = yield* buildSkillBundle(path)
+      yield* Console.log(`Valid ${bundle.manifest.name}`)
+      yield* Console.log(`  files: ${bundle.manifest.files.length}`)
+      yield* Console.log(`  bundle: ${bundle.bytes.byteLength} bytes`)
+    })
+  ).pipe(
+    Command.withDescription("Validate a local skill without sharing it"),
+    Command.withExamples([{ command: "sk validate ./my-skill", description: "Validate a local skill" }])
+  )
+
+  const list = Command.make(
+    "list",
+    {
+      scope: Flag.choice("scope", ["project", "global"] as const).pipe(
+        Flag.withDescription("Only list skills from this scope"),
+        Flag.optional
+      )
+    },
+    Effect.fn("listCommand")(function*({ scope }) {
+      const scopes: ReadonlyArray<SkillScope> = Option.match(scope, {
+        onNone: () => ["project", "global"],
+        onSome: (value) => [value]
+      })
+      const skills = yield* loadInstalledSkills(scopes)
+      yield* Console.log(renderInstalledSkills(skills))
+    })
+  ).pipe(
+    Command.withDescription("List installed skills"),
+    Command.withAlias("ls"),
+    Command.withExamples([{ command: "sk list --scope project", description: "List project skills" }])
+  )
+
+  const doctor = Command.make(
+    "doctor",
+    {},
+    Effect.fn("doctorCommand")(function*() {
+      const checks = yield* runDoctor()
+      yield* Console.log(renderDoctorReport(checks))
+    })
+  ).pipe(
+    Command.withDescription("Check the local Skilldrop environment")
+  )
+
   const inspect = Command.make(
     "inspect",
     {
@@ -79,26 +171,6 @@ export const makeCommand = (devMode: boolean) => {
   ).pipe(
     Command.withDescription("Verify and inspect a shared skill without installing it"),
     Command.withExamples([{ command: "sk inspect https://skilldrop.dev/s/7fx2kaA", description: "Inspect a shared skill" }])
-  )
-
-  const agent = Flag.choice("agent", agentNames).pipe(
-  Flag.withAlias("a"),
-  Flag.withDescription("Agent to install for (repeatable)"),
-  Flag.atMost(10)
-)
-
-  const scope = Flag.choice("scope", ["project", "global"] as const).pipe(
-  Flag.withDescription("Install in this project or globally"),
-  Flag.optional
-)
-
-  const yes = Flag.boolean("yes").pipe(
-    Flag.withAlias("y"),
-    Flag.withDescription("Accept detected defaults and skip confirmation")
-  )
-
-  const copy = Flag.boolean("copy").pipe(
-    Flag.withDescription("Copy into each agent directory instead of symlinking")
   )
 
   const installSkill = Effect.fn("installSkill")(function*(
@@ -225,5 +297,5 @@ export const makeCommand = (devMode: boolean) => {
     Command.withExamples([{ command: "sk setup --yes", description: "Install the Skilldrop skill globally" }])
   )
 
-  return root.pipe(Command.withSubcommands([share, inspect, install, setup]))
+  return root.pipe(Command.withSubcommands([share, validate, list, doctor, inspect, install, setup]))
 }
