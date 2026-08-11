@@ -1,7 +1,11 @@
 import { Context, Effect, Layer, Schema } from "effect"
 import { FetchHttpClient, HttpClient, HttpClientRequest, HttpClientResponse } from "effect/unstable/http"
+import pkg from "../package.json" with { type: "json" }
 import { SkillManifest } from "./archive.ts"
 import { CliError, messageFromCause } from "./errors.ts"
+
+export const SKILLDROP_USER_AGENT = `skilldrop-cli/${pkg.version}`
+export const withSkilldropUserAgent = HttpClientRequest.setHeader("user-agent", SKILLDROP_USER_AGENT)
 
 const SnapshotId = Schema.String.check(Schema.isPattern(/^(?:sk_[A-Za-z0-9_-]{22}|[A-Za-z0-9_-]{7,22})$/))
 
@@ -37,7 +41,9 @@ export class SkilldropApi extends Context.Service<SkilldropApi, {
   static readonly layer = Layer.effect(
     SkilldropApi,
     Effect.gen(function*() {
-      const client = yield* HttpClient.HttpClient
+      const client = (yield* HttpClient.HttpClient).pipe(
+        HttpClient.mapRequest(withSkilldropUserAgent)
+      )
       const execute = <A, E, R>(effect: Effect.Effect<A, E, R>) => effect.pipe(
         Effect.mapError((cause) => new CliError({ message: `Could not reach Skilldrop: ${messageFromCause(cause)}` }))
       )

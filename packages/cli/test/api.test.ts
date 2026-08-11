@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test"
 import { Effect } from "effect"
-import { parseSnapshotId } from "../src/api.ts"
+import { HttpClientRequest } from "effect/unstable/http"
+import pkg from "../package.json" with { type: "json" }
+import { parseSnapshotId, SKILLDROP_USER_AGENT, withSkilldropUserAgent } from "../src/api.ts"
 
 const canonicalId = "7fx2kaAbCDefGhijkLmNop"
 
@@ -23,4 +25,10 @@ describe("snapshot IDs", () => {
     const error = await Effect.runPromise(parseSnapshotId("7fx2ka").pipe(Effect.flip))
     expect(error.message).toContain("Invalid Skilldrop snapshot")
   })
+})
+
+test("identifies CLI requests with a versioned user-agent", () => {
+  expect(SKILLDROP_USER_AGENT).toBe(`skilldrop-cli/${pkg.version}`)
+  const request = HttpClientRequest.get("https://skilldrop.dev").pipe(withSkilldropUserAgent)
+  expect(request.headers["user-agent"]).toBe(SKILLDROP_USER_AGENT)
 })

@@ -47,6 +47,7 @@ export interface WebsiteAssets {
 
 const MIN_PUBLIC_ID_LENGTH = 7;
 const NO_INDEX_HEADER = "noindex, nofollow, noarchive";
+const SKILLDROP_CLI_USER_AGENT_PREFIX = "skilldrop-cli/";
 
 const snapshotKey = (id: string) => `snapshots/${id}.tar.gz`;
 const snapshotAliasKey = (id: SnapshotId) => `aliases/${id}`;
@@ -58,6 +59,9 @@ export const snapshotAliasCandidates = (
     { length: id.length - MIN_PUBLIC_ID_LENGTH + 1 },
     (_, index) => id.slice(0, MIN_PUBLIC_ID_LENGTH + index) as SnapshotId,
   );
+
+export const isSkilldropCliUserAgent = (userAgent: string) =>
+  userAgent.startsWith(SKILLDROP_CLI_USER_AGENT_PREFIX);
 
 const HttpPlatformStub = Layer.succeed(HttpPlatform.HttpPlatform, {
   platform: "web",
@@ -135,6 +139,36 @@ const WorkerImplementation = Effect.gen(function* () {
   const bucket = yield* Cloudflare.R2.ReadWriteBucket(Bucket);
   const analytics = yield* Cloudflare.AnalyticsEngine.WriteDataset(Events);
 
+  const recordEndpoint = Effect.fn("recordEndpoint")(function* (
+    endpoint: string,
+  ) {
+    const request = yield* HttpServerRequest;
+    const userAgent = request.headers["user-agent"] ?? "unknown";
+    const client = isSkilldropCliUserAgent(userAgent) ? "cli" : "other";
+
+    yield* Effect.log("endpoint").pipe(
+      Effect.annotateLogs({
+        endpoint,
+        "user-agent": userAgent,
+        client,
+      }),
+    );
+
+    yield* analytics
+      .writeDataPoint({
+        indexes: ["endpoints"],
+        blobs: [endpoint, userAgent, client],
+        doubles: [1],
+      })
+      .pipe(
+        Effect.catchTag("DatasetError", (cause) =>
+          Effect.logError("Failed to record endpoint analytics", cause).pipe(
+            Effect.annotateLogs({ endpoint }),
+          ),
+        ),
+      );
+  });
+
   const getObject = Effect.fn("getObject")(function* (id: SnapshotId) {
     const direct = yield* bucket.get(snapshotKey(id)).pipe(Effect.orDie);
     if (direct !== null) return direct;
@@ -175,6 +209,7 @@ const WorkerImplementation = Effect.gen(function* () {
         .handle(
           "createSnapshot",
           Effect.fn("createSnapshot")(function* () {
+            yield* recordEndpoint("createSnapshot");
             const request = yield* HttpServerRequest;
             let canonicalId: CanonicalSnapshotId;
             let id: SnapshotId | undefined;
@@ -202,6 +237,7 @@ const WorkerImplementation = Effect.gen(function* () {
         .handle(
           "uploadSnapshot",
           Effect.fn("uploadSnapshot")(function* ({ params, headers, payload }) {
+            yield* recordEndpoint("uploadSnapshot");
             const contentLength = Number(headers["content-length"] ?? "");
             if (
               !Number.isSafeInteger(contentLength) ||
@@ -241,6 +277,7 @@ const WorkerImplementation = Effect.gen(function* () {
         .handle(
           "getSnapshotMetadata",
           Effect.fn("getSnapshotMetadata")(function* ({ params }) {
+            yield* recordEndpoint("getSnapshotMetadata");
             const object = yield* getObject(params.id);
             const bytes = yield* object.bytes().pipe(Effect.orDie);
             const snapshot = yield* readStoredSnapshot(bytes);
@@ -256,6 +293,7 @@ const WorkerImplementation = Effect.gen(function* () {
         .handle(
           "getSnapshot",
           Effect.fn("getSnapshot")(function* ({ params }) {
+            yield* recordEndpoint("getSnapshot");
             const object = yield* getObject(params.id);
             const bytes = yield* object.bytes().pipe(Effect.orDie);
             const snapshot = yield* readStoredSnapshot(bytes);
@@ -272,6 +310,7 @@ const WorkerImplementation = Effect.gen(function* () {
         .handle(
           "downloadSnapshot",
           Effect.fn("downloadSnapshot")(function* ({ params }) {
+            yield* recordEndpoint("downloadSnapshot");
             const object = yield* getObject(params.id);
             return HttpServerResponse.stream(object.body, {
               contentType: "application/gzip",
@@ -288,6 +327,7 @@ const WorkerImplementation = Effect.gen(function* () {
         .handle(
           "install",
           Effect.fn("install")(function* ({ request }) {
+            yield* recordEndpoint("install");
             yield* Effect.try({
               try: () => new URL(request.originalUrl),
               catch: () => new NotFound(),
@@ -303,21 +343,6 @@ const WorkerImplementation = Effect.gen(function* () {
                 ),
               ),
             );
-
-            yield* Effect.log("install");
-
-            yield* analytics
-              .writeDataPoint({
-                indexes: ["endpoints"],
-                blobs: ["install"],
-                doubles: [1],
-              })
-              .pipe(
-                Effect.catchTag("DatasetError", (cause) =>
-                  Effect.logError("Failed to record analytics", cause),
-                ),
-              );
-
             return HttpServerResponse.text(installScript, {
               contentType: "text/x-shellscript",
             });
