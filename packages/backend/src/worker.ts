@@ -20,6 +20,7 @@ import { nanoid } from "nanoid";
 import installScript from "../public/install.sh?raw";
 import { SnapshotApi } from "./api";
 import { Bucket, SNAPSHOT_LIFETIME_SECONDS } from "./bucket";
+import { Events } from "./dataset";
 import {
   BadRequest,
   type CanonicalSnapshotId,
@@ -132,6 +133,7 @@ const readStoredSnapshot = Effect.fn("readStoredSnapshot")(function* (
 
 const WorkerImplementation = Effect.gen(function* () {
   const bucket = yield* Cloudflare.R2.ReadWriteBucket(Bucket);
+  const analytics = yield* Cloudflare.AnalyticsEngine.WriteDataset(Events);
 
   const getObject = Effect.fn("getObject")(function* (id: SnapshotId) {
     const direct = yield* bucket.get(snapshotKey(id)).pipe(Effect.orDie);
@@ -303,6 +305,18 @@ const WorkerImplementation = Effect.gen(function* () {
             );
 
             yield* Effect.log("install");
+
+            yield* analytics
+              .writeDataPoint({
+                indexes: ["endpoints"],
+                blobs: ["install"],
+                doubles: [1],
+              })
+              .pipe(
+                Effect.catchTag("DatasetError", (cause) =>
+                  Effect.logError("Failed to record analytics", cause),
+                ),
+              );
 
             return HttpServerResponse.text(installScript, {
               contentType: "text/x-shellscript",
