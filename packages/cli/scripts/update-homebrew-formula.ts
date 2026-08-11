@@ -27,16 +27,17 @@ const downloadTarball = async (version: string) => {
 const main = async () => {
   const version = Bun.argv[2]
   const destinationArgument = Bun.argv[3]
-  if (version === undefined || !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(version)) {
-    throw new Error("Usage: update-homebrew-formula.ts <version> [destination]")
+  if (
+    version === undefined ||
+    !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(version) ||
+    destinationArgument === undefined
+  ) {
+    throw new Error("Usage: update-homebrew-formula.ts <version> <formula-path>")
   }
 
   const repositoryRoot = resolve(import.meta.dir, "../../..")
-  const templatePath = resolve(repositoryRoot, "Formula/skilldrop.rb")
-  const destination = destinationArgument === undefined
-    ? templatePath
-    : resolve(repositoryRoot, destinationArgument)
-  const template = await readFile(templatePath, "utf8")
+  const destination = resolve(repositoryRoot, destinationArgument)
+  const template = await readFile(destination, "utf8")
   const tarball = await downloadTarball(version)
   const sha256 = createHash("sha256").update(tarball).digest("hex")
   const formula = updateFormula(template, version, sha256)

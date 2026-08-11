@@ -1,0 +1,58 @@
+name: Publish Homebrew formula
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Published CLI version without the cli-v prefix
+        required: true
+        type: string
+
+concurrency:
+  group: homebrew-release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check tap configuration
+        env:
+          TAP_REPOSITORY: ${{ vars.HOMEBREW_TAP_REPOSITORY }}
+          TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          test -n "$TAP_REPOSITORY" || { echo "::error::Set HOMEBREW_TAP_REPOSITORY to owner/homebrew-tap"; exit 1; }
+          test -n "$TAP_TOKEN" || { echo "::error::Set the HOMEBREW_TAP_TOKEN secret with write access to the tap"; exit 1; }
+      - uses: actions/checkout@v4
+        with:
+          path: skilldrop
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.HOMEBREW_TAP_REPOSITORY }}
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: homebrew-tap
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - name: Update formula from the published npm tarball
+        working-directory: skilldrop
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: bun packages/cli/scripts/update-homebrew-formula.ts "$RELEASE_VERSION" ../homebrew-tap/Formula/skilldrop.rb
+      - name: Publish formula to tap
+        working-directory: homebrew-tap
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          if git diff --quiet -- Formula/skilldrop.rb; then
+            echo "Formula is already current"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Formula/skilldrop.rb
+          git commit -m "skilldrop $RELEASE_VERSION"
+          git push
