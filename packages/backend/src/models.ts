@@ -1,4 +1,4 @@
-import * as Schema from "effect/Schema";
+import { Schema } from "effect";
 import * as SchemaTransformation from "effect/SchemaTransformation";
 import * as HttpApiSchema from "effect/unstable/httpapi/HttpApiSchema";
 
@@ -49,51 +49,41 @@ export class SnapshotMetadata extends Schema.Class<SnapshotMetadata>(
   uploaded_at: Schema.String,
 }) {}
 
-export class BadRequest extends Schema.TaggedErrorClass<BadRequest>()(
-  "BadRequest",
-  {
-    message: Schema.String,
-  },
-) {}
+export class BadRequest extends Schema.Error<BadRequest>("BadRequest")({
+  message: Schema.String,
+}) {}
 
-export class SnapshotNotFound extends Schema.TaggedErrorClass<SnapshotNotFound>()(
+export class SnapshotNotFound extends Schema.Error<SnapshotNotFound>(
   "SnapshotNotFound",
-  {
-    message: Schema.String,
-  },
-) {}
+)({
+  message: Schema.String,
+}) {}
 
-export class SnapshotConflict extends Schema.TaggedErrorClass<SnapshotConflict>()(
+export class SnapshotConflict extends Schema.Error<SnapshotConflict>(
   "SnapshotConflict",
-  {
-    message: Schema.String,
-  },
-) {}
+)({
+  message: Schema.String,
+}) {}
 
-export class PayloadTooLarge extends Schema.TaggedErrorClass<PayloadTooLarge>()(
+export class PayloadTooLarge extends Schema.Error<PayloadTooLarge>(
   "PayloadTooLarge",
-  {
-    message: Schema.String,
-  },
-) {}
+)({
+  message: Schema.String,
+}) {}
 
-export class InvalidSnapshot extends Schema.TaggedErrorClass<InvalidSnapshot>()(
+export class InvalidSnapshot extends Schema.Error<InvalidSnapshot>(
   "InvalidSnapshot",
-  {
-    message: Schema.String,
-  },
-) {}
+)({
+  message: Schema.String,
+}) {}
 
-export class NotFound extends Schema.TaggedErrorClass<NotFound>()(
-  "NotFound",
-  {},
-) {}
+export class NotFound extends Schema.Error<NotFound>("NotFound")({}) {}
 
 export const BadRequestResponse = Schema.String.pipe(
   Schema.decodeTo(
     BadRequest,
     SchemaTransformation.transform({
-      decode: (message) => ({ _tag: "BadRequest" as const, message }),
+      decode: (message) => ({ message }),
       encode: (error) => error.message,
     }),
   ),
@@ -105,7 +95,7 @@ export const SnapshotNotFoundResponse = Schema.String.pipe(
   Schema.decodeTo(
     SnapshotNotFound,
     SchemaTransformation.transform({
-      decode: (message) => ({ _tag: "SnapshotNotFound" as const, message }),
+      decode: (message) => ({ message }),
       encode: (error) => error.message,
     }),
   ),
@@ -117,7 +107,7 @@ export const SnapshotConflictResponse = Schema.String.pipe(
   Schema.decodeTo(
     SnapshotConflict,
     SchemaTransformation.transform({
-      decode: (message) => ({ _tag: "SnapshotConflict" as const, message }),
+      decode: (message) => ({ message }),
       encode: (error) => error.message,
     }),
   ),
@@ -129,7 +119,7 @@ export const PayloadTooLargeResponse = Schema.String.pipe(
   Schema.decodeTo(
     PayloadTooLarge,
     SchemaTransformation.transform({
-      decode: (message) => ({ _tag: "PayloadTooLarge" as const, message }),
+      decode: (message) => ({ message }),
       encode: (error) => error.message,
     }),
   ),
@@ -141,7 +131,7 @@ export const InvalidSnapshotResponse = Schema.String.pipe(
   Schema.decodeTo(
     InvalidSnapshot,
     SchemaTransformation.transform({
-      decode: (message) => ({ _tag: "InvalidSnapshot" as const, message }),
+      decode: (message) => ({ message }),
       encode: (error) => error.message,
     }),
   ),

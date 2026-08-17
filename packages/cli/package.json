@@ -37,7 +37,7 @@
     "@effect/platform-node": ">=4.0.0-beta.102 || >=4.0.0",
     "@effect/tsgo": "0.31.0",
     "@types/bun": "latest",
-    "effect": ">=4.0.0-beta.102 || >=4.0.0",
+    "effect": "^4.0.0-rc.110",
     "typescript": "7.0.2"
   }
 }
