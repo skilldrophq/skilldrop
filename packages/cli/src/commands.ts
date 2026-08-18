@@ -2,15 +2,15 @@ import { fileURLToPath } from "node:url";
 import { Console, Effect, FileSystem, Option, Path } from "effect";
 import { Argument, Command, Flag, Prompt } from "effect/unstable/cli";
 import {
+  type Agent,
+  type AgentName,
   agentNames,
   detectInstalledAgents,
   loadAgents,
   resolveAgentSelection,
-  type Agent,
-  type AgentName,
 } from "./agents.ts";
-import { SkilldropApi, parseSnapshotId } from "./api.ts";
-import { sha256, type ArchiveEntry, type SkillManifest } from "./archive.ts";
+import { parseSnapshotId, SkilldropApi } from "./api.ts";
+import { type ArchiveEntry, type SkillManifest, sha256 } from "./archive.ts";
 import { renderDoctorReport, runDoctor } from "./doctor.ts";
 import { CliError } from "./errors.ts";
 import { renderSnapshotInspection, verifySnapshot } from "./inspect.ts";
@@ -18,8 +18,8 @@ import {
   dim,
   loadInstalledSkills,
   renderInstalledSkills,
-  skillAgentGroup,
   type SkillScope,
+  skillAgentGroup,
 } from "./local-skills.ts";
 import {
   buildSkillBundle,
@@ -96,11 +96,13 @@ export const makeCommand = (devMode: boolean) => {
   );
 
   const yes = Flag.boolean("yes").pipe(
+    Flag.optional,
     Flag.withAlias("y"),
     Flag.withDescription("Accept detected defaults and skip confirmation"),
   );
 
   const copy = Flag.boolean("copy").pipe(
+    Flag.optional,
     Flag.withDescription(
       "Copy into each agent directory instead of symlinking",
     ),
@@ -117,6 +119,7 @@ export const makeCommand = (devMode: boolean) => {
         Flag.withDescription(
           "Show the exact outbound manifest without uploading",
         ),
+        Flag.optional,
       ),
     },
     Effect.fn("shareCommand")(function* ({ path, dryRun }) {
@@ -146,7 +149,7 @@ export const makeCommand = (devMode: boolean) => {
       yield* Console.log(`Validating ${selectedPath}…`);
       const bundle = yield* buildSkillBundle(selectedPath);
       yield* Console.log(renderOutboundManifest(bundle));
-      if (dryRun) {
+      if (Option.isSome(dryRun) && dryRun.value) {
         yield* Console.log("Dry run complete; nothing was uploaded");
         return;
       }
