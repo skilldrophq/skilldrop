@@ -14,6 +14,14 @@ The installed binary is `sk`. Share an agent skill:
 sk share ~/.claude/skills/review-pr
 ```
 
+Sharing prints the exact outbound file list before any upload. Use `--dry-run` to stop after producing that manifest:
+
+```sh
+sk share ~/.claude/skills/review-pr --dry-run
+```
+
+Skilldrop refuses every symlink in a skill, including links that resolve outside its root. A root `.skillignore` excludes local-only files and supports gitignore-style comments, negation, glob patterns, and trailing `/` directory patterns. The ignore file itself is never uploaded.
+
 Run `sk share` without a path to choose from installed project and global skills. Validate locally without uploading, or list installed skills and their scope:
 
 ```sh

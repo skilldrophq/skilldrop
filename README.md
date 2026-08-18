@@ -46,7 +46,8 @@ Useful commands:
 
 ```sh
 sk share                                    # choose an installed skill interactively
-sk share ./my-skill                         # create an immutable snapshot
+sk share ./my-skill                         # review files, then create a snapshot
+sk share ./my-skill --dry-run               # print the manifest without uploading
 sk validate ./my-skill                      # validate without uploading
 sk list                                     # list project and global skills
 sk doctor                                   # diagnose the local environment
@@ -57,7 +58,9 @@ sk install <snapshot> --scope global --yes  # non-interactive install
 sk setup                                    # install the bundled agent skill
 ```
 
-Pass the skill directory—not the `SKILL.md` file—to `sk share`.
+Pass the skill directory—not the `SKILL.md` file—to `sk share`. Before uploading, `sk share` prints every packaged path plus the generated manifest. It refuses symlinks, including links that resolve outside the skill root.
+
+Add a `.skillignore` file at the skill root to exclude private fixtures, environment files, or other local-only content. It supports gitignore-style blank lines, `#` comments, `!` negation, root-relative patterns, `*`, `**`, `?`, and trailing `/` directory patterns. `.skillignore` itself is never uploaded.
 
 ## Development
 

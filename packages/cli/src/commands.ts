@@ -18,6 +18,18 @@ interface InstallableSkill {
   readonly files: ReadonlyArray<ArchiveEntry>
 }
 
+const renderOutboundManifest = (bundle: {
+  readonly bytes: Uint8Array
+  readonly id: string
+  readonly manifest: SkillManifest
+}) => [
+  `Outbound files (${bundle.manifest.files.length + 1}):`,
+  ...bundle.manifest.files.map((file) => `  ${file.path} (${file.size} bytes)`),
+  "  skilldrop.manifest.json (generated)",
+  `Bundle: ${bundle.bytes.byteLength} bytes compressed`,
+  `Content ID: ${bundle.id}`
+].join("\n")
+
 export const makeCommand = (devMode: boolean) => {
   const base = Command.make("sk").pipe(
     Command.withDescription("Share and install agent skills")
@@ -73,9 +85,12 @@ export const makeCommand = (devMode: boolean) => {
     path: Argument.string("path").pipe(
       Argument.withDescription("Path to a skill directory"),
       Argument.optional
+    ),
+    dryRun: Flag.boolean("dry-run").pipe(
+      Flag.withDescription("Show the exact outbound manifest without uploading")
     )
   },
-  Effect.fn("shareCommand")(function*({ path }) {
+  Effect.fn("shareCommand")(function*({ path, dryRun }) {
     const selectedPath = yield* Option.match(path, {
       onNone: () => Effect.gen(function*() {
         const skills = yield* loadInstalledSkills()
@@ -93,10 +108,15 @@ export const makeCommand = (devMode: boolean) => {
       }),
       onSome: Effect.succeed
     })
-    const apiUrl = yield* getApiUrl()
-    const api = yield* SkilldropApi
     yield* Console.log(`Validating ${selectedPath}…`)
     const bundle = yield* buildSkillBundle(selectedPath)
+    yield* Console.log(renderOutboundManifest(bundle))
+    if (dryRun) {
+      yield* Console.log("Dry run complete; nothing was uploaded")
+      return
+    }
+    const apiUrl = yield* getApiUrl()
+    const api = yield* SkilldropApi
     const created = yield* api.create(apiUrl, bundle.id)
     yield* api.upload(created.upload_url, bundle.bytes)
     const url = new URL(`/s/${created.id}`, apiUrl).toString()
@@ -107,7 +127,10 @@ export const makeCommand = (devMode: boolean) => {
 ).pipe(
   Command.withDescription("Create an immutable snapshot of a local skill"),
   Command.withAlias("s"),
-  Command.withExamples([{ command: "sk share ~/.claude/skills/review-pr", description: "Share a local skill" }])
+  Command.withExamples([
+    { command: "sk share ~/.claude/skills/review-pr", description: "Share a local skill" },
+    { command: "sk share ./my-skill --dry-run", description: "Preview the outbound manifest" }
+  ])
 )
 
   const validate = Command.make(
