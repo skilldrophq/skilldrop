@@ -23,12 +23,16 @@ const run = <A, E>(
 const skill = new SkillManifest({
   protocol_version: 1,
   name: "review-pr",
-  files: [new ManifestFile({ path: "SKILL.md", size: 13, sha256: "a".repeat(64) })],
+  files: [
+    new ManifestFile({ path: "SKILL.md", size: 13, sha256: "a".repeat(64) }),
+  ],
 });
 
 const installable: InstallableSkill = {
   manifest: skill,
-  files: [{ path: "SKILL.md", content: encoder.encode("# Review PR\n"), mode: 0o644 }],
+  files: [
+    { path: "SKILL.md", content: encoder.encode("# Review PR\n"), mode: 0o644 },
+  ],
 };
 
 describe("skill installation", () => {
@@ -37,10 +41,14 @@ describe("skill installation", () => {
       Effect.gen(function* () {
         const fs = yield* FileSystem.FileSystem;
         const path = yield* Path.Path;
-        const root = yield* fs.makeTempDirectoryScoped({ prefix: "install-plan" });
+        const root = yield* fs.makeTempDirectoryScoped({
+          prefix: "install-plan",
+        });
         const canonicalRoot = path.join(root, "canonical");
         const claudeRoot = path.join(root, "claude");
-        yield* fs.makeDirectory(path.join(claudeRoot, "review-pr"), { recursive: true });
+        yield* fs.makeDirectory(path.join(claudeRoot, "review-pr"), {
+          recursive: true,
+        });
         const selection: AgentSelection = {
           agents: [
             {
@@ -75,7 +83,9 @@ describe("skill installation", () => {
       Effect.gen(function* () {
         const fs = yield* FileSystem.FileSystem;
         const path = yield* Path.Path;
-        const root = yield* fs.makeTempDirectoryScoped({ prefix: "install-execute" });
+        const root = yield* fs.makeTempDirectoryScoped({
+          prefix: "install-execute",
+        });
         const targetRoot = path.join(root, "target");
         const selection: AgentSelection = {
           agents: [],
@@ -91,7 +101,9 @@ describe("skill installation", () => {
         const executed = yield* executeInstallation(plan, installable);
         return {
           executed,
-          content: yield* fs.readFileString(path.join(targetRoot, "review-pr", "SKILL.md")),
+          content: yield* fs.readFileString(
+            path.join(targetRoot, "review-pr", "SKILL.md"),
+          ),
         };
       }),
     );

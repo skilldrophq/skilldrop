@@ -42,8 +42,8 @@ describe("agent topology", () => {
       )?.path,
     ).toBe("/config/me/goose/skills");
 
-    const selected = topology.definitions.filter((agent) =>
-      agent.name === "claude-code" || agent.name === "universal",
+    const selected = topology.definitions.filter(
+      (agent) => agent.name === "claude-code" || agent.name === "universal",
     );
     expect(selected).toHaveLength(2);
     const selection = resolveAgentSelection(topology, selected, "project");

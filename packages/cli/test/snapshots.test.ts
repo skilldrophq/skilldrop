@@ -20,8 +20,13 @@ describe("snapshot transfer", () => {
       Effect.gen(function* () {
         const fs = yield* FileSystem.FileSystem;
         const path = yield* Path.Path;
-        const root = yield* fs.makeTempDirectoryScoped({ prefix: "snapshot-transfer" });
-        yield* fs.writeFile(path.join(root, "SKILL.md"), new TextEncoder().encode("# Transfer\n"));
+        const root = yield* fs.makeTempDirectoryScoped({
+          prefix: "snapshot-transfer",
+        });
+        yield* fs.writeFile(
+          path.join(root, "SKILL.md"),
+          new TextEncoder().encode("# Transfer\n"),
+        );
         const bundle = yield* buildSkillBundle(root);
         const metadata = new SnapshotMetadata({
           id: "1234567890123456789012",
@@ -66,14 +71,22 @@ describe("snapshot transfer", () => {
       Effect.gen(function* () {
         const fs = yield* FileSystem.FileSystem;
         const path = yield* Path.Path;
-        const root = yield* fs.makeTempDirectoryScoped({ prefix: "snapshot-publish" });
-        yield* fs.writeFile(path.join(root, "SKILL.md"), new TextEncoder().encode("# Publish\n"));
+        const root = yield* fs.makeTempDirectoryScoped({
+          prefix: "snapshot-publish",
+        });
+        yield* fs.writeFile(
+          path.join(root, "SKILL.md"),
+          new TextEncoder().encode("# Publish\n"),
+        );
         const bundle = yield* buildSkillBundle(root);
         const events: Array<string> = [];
         const api = SkilldropApi.of({
           create: (_apiUrl, id) => {
             events.push(`create:${id}`);
-            return Effect.succeed({ id: "published123", upload_url: "https://upload.test/bundle" });
+            return Effect.succeed({
+              id: "published123",
+              upload_url: "https://upload.test/bundle",
+            });
           },
           upload: (url, bytes) => {
             events.push(`upload:${url}:${bytes.byteLength}`);

@@ -24,46 +24,48 @@ export interface InstallationResult {
   readonly fallbackCopies: ReadonlyArray<string>;
 }
 
-export const prepareInstallation = Effect.fn("prepareInstallation")(function* (
-  input: {
+export const prepareInstallation = Effect.fn("prepareInstallation")(
+  function* (input: {
     readonly skill: InstallableSkill;
     readonly selection: AgentSelection;
     readonly scope: "project" | "global";
     readonly copyFiles: boolean;
-  },
-) {
-  const fs = yield* FileSystem.FileSystem;
-  const path = yield* Path.Path;
-  const mode =
-    input.copyFiles || input.selection.targetRoots.length === 1
-      ? "copy"
-      : "symlink";
-  const roots =
-    mode === "copy"
-      ? input.selection.targetRoots
-      : [input.selection.canonicalRoot, ...input.selection.targetRoots];
-  const uniqueRoots = [...new Set(roots)];
-  const destinations = uniqueRoots.map((root) =>
-    path.join(root, input.skill.manifest.name),
-  );
-  const existing: Array<string> = [];
-  for (const destination of destinations) {
-    if (yield* fs.exists(destination).pipe(Effect.orElseSucceed(() => false))) {
-      existing.push(destination);
+  }) {
+    const fs = yield* FileSystem.FileSystem;
+    const path = yield* Path.Path;
+    const mode =
+      input.copyFiles || input.selection.targetRoots.length === 1
+        ? "copy"
+        : "symlink";
+    const roots =
+      mode === "copy"
+        ? input.selection.targetRoots
+        : [input.selection.canonicalRoot, ...input.selection.targetRoots];
+    const uniqueRoots = [...new Set(roots)];
+    const destinations = uniqueRoots.map((root) =>
+      path.join(root, input.skill.manifest.name),
+    );
+    const existing: Array<string> = [];
+    for (const destination of destinations) {
+      if (
+        yield* fs.exists(destination).pipe(Effect.orElseSucceed(() => false))
+      ) {
+        existing.push(destination);
+      }
     }
-  }
-  return {
-    skillName: input.skill.manifest.name,
-    fileCount: input.skill.files.length,
-    scope: input.scope,
-    agents: input.selection.agents,
-    mode,
-    canonicalRoot: input.selection.canonicalRoot,
-    targetRoots: input.selection.targetRoots,
-    destinations,
-    existing,
-  } satisfies InstallationPlan;
-});
+    return {
+      skillName: input.skill.manifest.name,
+      fileCount: input.skill.files.length,
+      scope: input.scope,
+      agents: input.selection.agents,
+      mode,
+      canonicalRoot: input.selection.canonicalRoot,
+      targetRoots: input.selection.targetRoots,
+      destinations,
+      existing,
+    } satisfies InstallationPlan;
+  },
+);
 
 export const renderInstallationPlan = (plan: InstallationPlan) => {
   const lines = [
