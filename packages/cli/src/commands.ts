@@ -6,8 +6,9 @@ import {
   type AgentName,
   agentNames,
   detectInstalledAgents,
-  loadAgents,
+  loadAgentTopology,
   resolveAgentSelection,
+  type SkillScope,
 } from "./agents.ts";
 
 import { type SkillManifest, sha256 } from "./archive.ts";
@@ -24,7 +25,6 @@ import {
   dim,
   loadInstalledSkills,
   renderInstalledSkills,
-  type SkillScope,
   skillAgentGroup,
 } from "./local-skills.ts";
 import { buildSkillBundle, verifySkillBundle } from "./skill.ts";
@@ -256,14 +256,19 @@ export const makeCommand = (devMode: boolean) => {
     copyFiles: boolean,
     defaultScope: "project" | "global",
   ) {
-    const { definitions } = yield* loadAgents();
+    const topology = yield* loadAgentTopology();
+    const { definitions } = topology;
     let selected: ReadonlyArray<Agent>;
     if (requestedNames.length > 0) {
-      selected = requestedNames.map(
-        (name) => definitions.find((candidate) => candidate.name === name)!,
+      const definitionsByName = new Map(
+        definitions.map((candidate) => [candidate.name, candidate]),
       );
+      selected = requestedNames.flatMap((name) => {
+        const candidate = definitionsByName.get(name);
+        return candidate === undefined ? [] : [candidate];
+      });
     } else {
-      const detected = yield* detectInstalledAgents(definitions);
+      const detected = yield* detectInstalledAgents(topology);
       if (acceptDefaults) {
         selected = [
           ...detected,
@@ -285,12 +290,12 @@ export const makeCommand = (devMode: boolean) => {
             })),
           }),
         );
-        const universal = definitions.find(
+        const universal = definitions.filter(
           (candidate) => candidate.name === "universal",
-        )!;
+        );
         selected = prompted.some((candidate) => candidate.name === "universal")
           ? prompted
-          : [...prompted, universal];
+          : [...prompted, ...universal];
       }
     }
 
@@ -318,7 +323,7 @@ export const makeCommand = (devMode: boolean) => {
       onSome: (value) => Effect.succeed(value),
     });
     const installScope = yield* selectedScope;
-    const selection = yield* resolveAgentSelection(selected, installScope);
+    const selection = resolveAgentSelection(topology, selected, installScope);
     const plan = yield* prepareInstallation({
       skill: verified,
       selection,

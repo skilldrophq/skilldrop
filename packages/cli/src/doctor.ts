@@ -1,5 +1,5 @@
 import { Effect, FileSystem, Path } from "effect"
-import { detectInstalledAgents, loadAgents } from "./agents.ts"
+import { detectInstalledAgents, loadAgentTopology } from "./agents.ts"
 
 export type DoctorStatus = "pass" | "warn" | "fail"
 
@@ -24,42 +24,50 @@ const writableTargetCheck = Effect.fn("writableTargetCheck")(function*(label: st
     Effect.as(true),
     Effect.orElseSucceed(() => false)
   )
-  return writable
-    ? {
-        label,
-        status: "pass" as const,
-        detail: targetExists ? `${target} is writable` : `${target} can be created`
-      }
-    : {
-        label,
-        status: "fail" as const,
-        detail: `${target} is not writable`,
-        fix: `Grant write access to ${probe} or choose another installation scope`
-      }
+  if (!writable) {
+    return {
+      label,
+      status: "fail" as const,
+      detail: `${target} is not writable`,
+      fix: `Grant write access to ${probe} or choose another installation scope`
+    }
+  }
+  return {
+    label,
+    status: "pass" as const,
+    detail: targetExists ? `${target} is writable` : `${target} can be created`
+  }
 })
 
 export const runDoctor = Effect.fn("runDoctor")(function*() {
-  const path = yield* Path.Path
-  const { definitions, home } = yield* loadAgents()
-  const detected = yield* detectInstalledAgents(definitions)
+  const topology = yield* loadAgentTopology()
+  const detected = yield* detectInstalledAgents(topology)
   const nodeVersion = process.versions.node
   const nodeMajor = Number.parseInt(nodeVersion.split(".")[0] ?? "0", 10)
-  const checks: Array<DoctorCheck> = [{
-    label: "Node.js",
-    status: nodeMajor >= 20 ? "pass" : "fail",
-    detail: `v${nodeVersion}${nodeMajor >= 20 ? "" : " is unsupported"}`,
-    ...(nodeMajor >= 20 ? {} : { fix: "Install Node.js 20 or newer" })
-  }, {
-    label: "Agents",
-    status: detected.length > 0 ? "pass" : "warn",
-    detail: detected.length > 0
-      ? detected.map((agent) => agent.displayName).join(", ")
-      : "No agent config directories detected; Universal remains available",
-    ...(detected.length > 0 ? {} : { fix: "Install an agent or use --agent universal explicitly" })
-  }]
+  const nodeCheck: DoctorCheck = nodeMajor >= 20
+    ? { label: "Node.js", status: "pass", detail: `v${nodeVersion}` }
+    : {
+        label: "Node.js",
+        status: "fail",
+        detail: `v${nodeVersion} is unsupported`,
+        fix: "Install Node.js 20 or newer"
+      }
+  const agentCheck: DoctorCheck = detected.length > 0
+    ? {
+        label: "Agents",
+        status: "pass",
+        detail: detected.map((agent) => agent.displayName).join(", ")
+      }
+    : {
+        label: "Agents",
+        status: "warn",
+        detail: "No agent config directories detected; Universal remains available",
+        fix: "Install an agent or use --agent universal explicitly"
+      }
+  const checks: Array<DoctorCheck> = [nodeCheck, agentCheck]
 
-  checks.push(yield* writableTargetCheck("Project skills", path.resolve(".agents", "skills")))
-  checks.push(yield* writableTargetCheck("Global skills", path.join(home, ".agents", "skills")))
+  checks.push(yield* writableTargetCheck("Project skills", topology.canonicalRoots.project))
+  checks.push(yield* writableTargetCheck("Global skills", topology.canonicalRoots.global))
   return checks
 })
 

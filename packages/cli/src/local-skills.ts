@@ -1,14 +1,14 @@
 import { Effect, FileSystem, Path } from "effect"
-import { type Agent, loadAgents } from "./agents.ts"
+import {
+  type Agent,
+  type AgentRoot,
+  loadAgentTopology,
+  rootsForScopes,
+  type SkillScope
+} from "./agents.ts"
 import { CliError, messageFromCause } from "./errors.ts"
 
-export type SkillScope = "project" | "global"
-
-export interface SkillRoot {
-  readonly path: string
-  readonly scope: SkillScope
-  readonly agents: ReadonlyArray<Agent>
-}
+export type { AgentRoot as SkillRoot, SkillScope } from "./agents.ts"
 
 export interface InstalledSkill {
   readonly name: string
@@ -19,34 +19,8 @@ export interface InstalledSkill {
 
 const scopeOrder = (scope: SkillScope) => scope === "project" ? 0 : 1
 
-export const loadSkillRoots = Effect.fn("loadSkillRoots")(function*(
-  scopes: ReadonlyArray<SkillScope> = ["project", "global"]
-) {
-  const path = yield* Path.Path
-  const projectRoot = path.resolve(".")
-  const { definitions } = yield* loadAgents()
-  const roots = new Map<string, { path: string; scope: SkillScope; agents: Array<Agent> }>()
-
-  for (const scope of scopes) {
-    for (const agent of definitions) {
-      const root = scope === "project"
-        ? path.join(projectRoot, ...agent.projectSkillsDir.split("/"))
-        : agent.globalSkillsDir
-      const key = `${scope}:${root}`
-      const existing = roots.get(key)
-      if (existing === undefined) {
-        roots.set(key, { path: root, scope, agents: [agent] })
-      } else {
-        existing.agents.push(agent)
-      }
-    }
-  }
-
-  return [...roots.values()]
-})
-
 export const discoverInstalledSkills = Effect.fn("discoverInstalledSkills")(function*(
-  roots: ReadonlyArray<SkillRoot>
+  roots: ReadonlyArray<AgentRoot>
 ) {
   const fs = yield* FileSystem.FileSystem
   const path = yield* Path.Path
@@ -60,7 +34,7 @@ export const discoverInstalledSkills = Effect.fn("discoverInstalledSkills")(func
         message: `Could not list installed skills in ${root.path}: ${messageFromCause(cause)}`
       }))
     )
-    children.sort()
+    children.sort((left, right) => left.localeCompare(right))
     for (const name of children) {
       const skillPath = path.join(root.path, name)
       const hasSkillMarkdown = yield* fs.exists(path.join(skillPath, "SKILL.md")).pipe(
@@ -84,8 +58,8 @@ export const discoverInstalledSkills = Effect.fn("discoverInstalledSkills")(func
 export const loadInstalledSkills = Effect.fn("loadInstalledSkills")(function*(
   scopes: ReadonlyArray<SkillScope> = ["project", "global"]
 ) {
-  const roots = yield* loadSkillRoots(scopes)
-  return yield* discoverInstalledSkills(roots)
+  const topology = yield* loadAgentTopology()
+  return yield* discoverInstalledSkills(rootsForScopes(topology, scopes))
 })
 
 export const dim = (text: string) => `\u001b[2m${text}\u001b[22m`
@@ -132,8 +106,8 @@ export const renderInstalledSkills = (skills: ReadonlyArray<InstalledSkill>) => 
   }
   const entries = [...deduplicated.values()].map((entry) => ({
     ...entry,
-    group: [...entry.agents].sort().join(" + "),
-    paths: [...entry.paths].sort()
+    group: [...entry.agents].sort((left, right) => left.localeCompare(right)).join(" + "),
+    paths: [...entry.paths].sort((left, right) => left.localeCompare(right))
   }))
   const groups = groupBy(entries, (entry) => entry.group)
   const lines = [`Installed skills (${entries.length})`]
