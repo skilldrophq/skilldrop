@@ -418,13 +418,18 @@ export const makeCommand = (devMode: boolean) => {
       yes,
       copy,
     }) {
-      const { verified } = yield* loadSnapshot(snapshot);
+      const { metadata, verified } = yield* loadSnapshot(snapshot);
+      yield* Console.log(
+        renderSnapshotInspection(metadata, verified.files, {
+          includeInstallCommand: false,
+        }),
+      );
       yield* installSkill(
         verified,
         requestedNames,
         requestedScope,
-        yes,
-        copy,
+        Option.getOrElse(yes, () => false),
+        Option.getOrElse(copy, () => false),
         "project",
       );
     }),
@@ -455,8 +460,8 @@ export const makeCommand = (devMode: boolean) => {
         verified,
         requestedNames,
         requestedScope,
-        yes,
-        copy,
+        Option.getOrElse(yes, () => false),
+        Option.getOrElse(copy, () => false),
         "global",
       );
     }),
