@@ -1,5 +1,5 @@
 import { fileURLToPath } from "node:url";
-import { Console, Effect, FileSystem, Option, Path } from "effect";
+import { Console, Effect, Option } from "effect";
 import { Argument, Command, Flag, Prompt } from "effect/unstable/cli";
 import {
   type Agent,
@@ -10,9 +10,15 @@ import {
   resolveAgentSelection,
 } from "./agents.ts";
 import { parseSnapshotId, SkilldropApi } from "./api.ts";
-import { type ArchiveEntry, type SkillManifest, sha256 } from "./archive.ts";
+import { type SkillManifest, sha256 } from "./archive.ts";
 import { renderDoctorReport, runDoctor } from "./doctor.ts";
 import { CliError } from "./errors.ts";
+import {
+  executeInstallation,
+  type InstallableSkill,
+  prepareInstallation,
+  renderInstallationPlan,
+} from "./install.ts";
 import { renderSnapshotInspection, verifySnapshot } from "./inspect.ts";
 import {
   dim,
@@ -21,22 +27,12 @@ import {
   type SkillScope,
   skillAgentGroup,
 } from "./local-skills.ts";
-import {
-  buildSkillBundle,
-  installVerifiedSkill,
-  linkInstalledSkill,
-  verifySkillBundle,
-} from "./skill.ts";
+import { buildSkillBundle, verifySkillBundle } from "./skill.ts";
 
 const productionApiUrl = "https://skilldrop.dev";
 const bundledSkillPath = fileURLToPath(
   new URL("../skills/use-skilldrop", import.meta.url),
 );
-
-interface InstallableSkill {
-  readonly manifest: SkillManifest;
-  readonly files: ReadonlyArray<ArchiveEntry>;
-}
 
 const renderOutboundManifest = (bundle: {
   readonly bytes: Uint8Array;
@@ -267,8 +263,6 @@ export const makeCommand = (devMode: boolean) => {
     copyFiles: boolean,
     defaultScope: "project" | "global",
   ) {
-    const path = yield* Path.Path;
-    const fs = yield* FileSystem.FileSystem;
     const { definitions } = yield* loadAgents();
     let selected: ReadonlyArray<Agent>;
     if (requestedNames.length > 0) {
@@ -332,33 +326,15 @@ export const makeCommand = (devMode: boolean) => {
     });
     const installScope = yield* selectedScope;
     const selection = yield* resolveAgentSelection(selected, installScope);
-    const mode =
-      copyFiles || selection.targetRoots.length === 1 ? "copy" : "symlink";
-    const destinations =
-      mode === "copy"
-        ? selection.targetRoots
-        : [selection.canonicalRoot, ...selection.targetRoots];
-    const uniqueDestinations = [...new Set(destinations)];
-    const existing: Array<string> = [];
-    for (const root of uniqueDestinations) {
-      const destination = path.join(root, verified.manifest.name);
-      if (yield* fs.exists(destination).pipe(Effect.orElseSucceed(() => false)))
-        existing.push(destination);
-    }
+    const plan = yield* prepareInstallation({
+      skill: verified,
+      selection,
+      scope: installScope,
+      copyFiles,
+    });
 
     yield* Console.log("");
-    yield* Console.log(
-      `Install ${verified.manifest.name} (${verified.files.length} files)`,
-    );
-    yield* Console.log(`  scope: ${installScope}`);
-    yield* Console.log(
-      `  agents: ${selected.map((item) => item.displayName).join(", ")}`,
-    );
-    yield* Console.log(`  method: ${mode}`);
-    for (const destination of uniqueDestinations)
-      yield* Console.log(`  → ${destination}`);
-    for (const destination of existing)
-      yield* Console.log(`  overwrites: ${destination}`);
+    yield* Console.log(renderInstallationPlan(plan));
 
     if (!acceptDefaults) {
       const confirmed = yield* Prompt.run(
@@ -370,32 +346,9 @@ export const makeCommand = (devMode: boolean) => {
       }
     }
 
-    if (mode === "copy") {
-      for (const targetRoot of selection.targetRoots) {
-        yield* installVerifiedSkill(
-          targetRoot,
-          verified.manifest,
-          verified.files,
-          true,
-        );
-      }
-    } else {
-      const canonical = yield* installVerifiedSkill(
-        selection.canonicalRoot,
-        verified.manifest,
-        verified.files,
-        true,
-      );
-      for (const targetRoot of selection.targetRoots) {
-        const result = yield* linkInstalledSkill(
-          canonical,
-          targetRoot,
-          verified.manifest.name,
-          verified.files,
-        );
-        if (result.mode === "copy")
-          yield* Console.log(`Symlink unavailable; copied to ${result.path}`);
-      }
+    const result = yield* executeInstallation(plan, verified);
+    for (const fallback of result.fallbackCopies) {
+      yield* Console.log(`Symlink unavailable; copied to ${fallback}`);
     }
     yield* Console.log(`Installed ${verified.manifest.name}`);
   });
