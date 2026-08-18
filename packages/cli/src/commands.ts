@@ -9,7 +9,7 @@ import {
   loadAgents,
   resolveAgentSelection,
 } from "./agents.ts";
-import { parseSnapshotId, SkilldropApi } from "./api.ts";
+
 import { type SkillManifest, sha256 } from "./archive.ts";
 import { renderDoctorReport, runDoctor } from "./doctor.ts";
 import { CliError } from "./errors.ts";
@@ -19,7 +19,7 @@ import {
   prepareInstallation,
   renderInstallationPlan,
 } from "./install.ts";
-import { renderSnapshotInspection, verifySnapshot } from "./inspect.ts";
+import { renderSnapshotInspection } from "./inspect.ts";
 import {
   dim,
   loadInstalledSkills,
@@ -28,6 +28,7 @@ import {
   skillAgentGroup,
 } from "./local-skills.ts";
 import { buildSkillBundle, verifySkillBundle } from "./skill.ts";
+import { loadVerifiedSnapshot, publishSnapshot } from "./snapshots.ts";
 
 const productionApiUrl = "https://skilldrop.dev";
 const bundledSkillPath = fileURLToPath(
@@ -72,12 +73,7 @@ export const makeCommand = (devMode: boolean) => {
 
   const loadSnapshot = Effect.fn("loadSnapshot")(function* (snapshot: string) {
     const apiUrl = yield* getApiUrl();
-    const api = yield* SkilldropApi;
-    const id = yield* parseSnapshotId(snapshot);
-    const metadata = yield* api.metadata(apiUrl, id);
-    const compressed = yield* api.download(apiUrl, id);
-    const verified = yield* verifySnapshot(metadata, compressed);
-    return { metadata, verified };
+    return yield* loadVerifiedSnapshot(apiUrl, snapshot);
   });
 
   const agent = Flag.choice("agent", agentNames).pipe(
@@ -150,13 +146,10 @@ export const makeCommand = (devMode: boolean) => {
         return;
       }
       const apiUrl = yield* getApiUrl();
-      const api = yield* SkilldropApi;
-      const created = yield* api.create(apiUrl, bundle.id);
-      yield* api.upload(created.upload_url, bundle.bytes);
-      const url = new URL(`/s/${created.id}`, apiUrl).toString();
+      const published = yield* publishSnapshot(apiUrl, bundle);
       yield* Console.log(`Shared ${bundle.manifest.name}`);
-      yield* Console.log(url);
-      yield* Console.log(`Install with: sk install ${url}`);
+      yield* Console.log(published.url);
+      yield* Console.log(`Install with: sk install ${published.url}`);
     }),
   ).pipe(
     Command.withDescription("Create an immutable snapshot of a local skill"),
