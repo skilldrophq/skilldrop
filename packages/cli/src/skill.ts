@@ -1,244 +1,472 @@
-import { lstat, realpath } from "node:fs/promises"
-import { Crypto, Effect, FileSystem, Path, Schema } from "effect"
-import ignore from "ignore"
-import { decodeTar, encodeTar, gzip, gunzip, ManifestFile, sha256, SkillManifest } from "./archive.ts"
-import type { ArchiveEntry } from "./archive.ts"
-import { CliError, messageFromCause } from "./errors.ts"
+import { Crypto, Effect, FileSystem, Path, Schema } from "effect";
+import ignore from "ignore";
+import {
+  decodeTar,
+  encodeTar,
+  gzip,
+  gunzip,
+  ManifestFile,
+  sha256,
+  SkillManifest,
+} from "./archive.ts";
+import type { ArchiveEntry } from "./archive.ts";
+import { CliError, messageFromCause } from "./errors.ts";
 
-const MAX_FILES = 255
-const MAX_FILE_BYTES = 2 * 1024 * 1024
-const MAX_UNCOMPRESSED_BYTES = 32 * 1024 * 1024
-const MAX_COMPRESSED_BYTES = 10 * 1024 * 1024
-const manifestPath = "skilldrop.manifest.json"
-const ignorePath = ".skillignore"
+const MAX_FILES = 255;
+const MAX_FILE_BYTES = 2 * 1024 * 1024;
+const MAX_UNCOMPRESSED_BYTES = 32 * 1024 * 1024;
+const MAX_COMPRESSED_BYTES = 10 * 1024 * 1024;
+const manifestPath = "skilldrop.manifest.json";
+const ignorePath = ".skillignore";
 
-const isIgnored = (relative: string, directory: boolean, rules: ReturnType<typeof ignore>) =>
-  rules.ignores(directory ? `${relative}/` : relative)
+const isIgnored = (
+  relative: string,
+  directory: boolean,
+  rules: ReturnType<typeof ignore>,
+) => rules.ignores(directory ? `${relative}/` : relative);
 
 export interface SkillBundle {
-  readonly bytes: Uint8Array
-  readonly id: string
-  readonly manifest: SkillManifest
+  readonly bytes: Uint8Array;
+  readonly id: string;
+  readonly manifest: SkillManifest;
 }
 
-const inspectPath = Effect.fn("inspectPath")(function*(filePath: string) {
-  return yield* Effect.tryPromise({
-    try: () => lstat(filePath),
-    catch: (cause) => new CliError({ message: `Could not inspect ${filePath}: ${messageFromCause(cause)}` })
-  })
-})
-
-export const buildSkillBundle = Effect.fn("buildSkillBundle")(function*(input: string) {
-  const fs = yield* FileSystem.FileSystem
-  const path = yield* Path.Path
-  const root = path.resolve(input)
-  const rootInfo = yield* inspectPath(root)
-  if (rootInfo.isSymbolicLink() || !rootInfo.isDirectory()) {
-    return yield* new CliError({ message: `Skill path must be a directory and may not be a symlink: ${input}` })
+export const buildSkillBundle = Effect.fn("buildSkillBundle")(function* (
+  input: string,
+) {
+  const fs = yield* FileSystem.FileSystem;
+  const path = yield* Path.Path;
+  const inspectPath = Effect.fn("inspectPath")(function* (filePath: string) {
+    const symbolicLink = yield* fs.readLink(filePath).pipe(
+      Effect.as(true),
+      Effect.orElseSucceed(() => false),
+    );
+    if (symbolicLink) return { type: "SymbolicLink" as const };
+    return yield* fs
+      .stat(filePath)
+      .pipe(
+        Effect.mapError(
+          (cause) =>
+            new CliError({
+              message: `Could not inspect ${filePath}: ${messageFromCause(cause)}`,
+            }),
+        ),
+      );
+  });
+  const root = path.resolve(input);
+  const rootInfo = yield* inspectPath(root);
+  if (rootInfo.type === "SymbolicLink" || rootInfo.type !== "Directory") {
+    return yield* new CliError({
+      message: `Skill path must be a directory and may not be a symlink: ${input}`,
+    });
   }
 
-  const name = path.basename(root)
-  const decodedName = yield* Schema.decodeUnknownEffect(SkillManifest.fields.name)(name).pipe(
-    Effect.mapError(() => new CliError({ message: `Skill directory has an invalid name: ${name}` }))
-  )
-  const rootRealPath = yield* Effect.tryPromise({
-    try: () => realpath(root),
-    catch: (cause) => new CliError({ message: `Could not resolve ${root}: ${messageFromCause(cause)}` })
-  })
-  const ignoreFile = path.join(root, ignorePath)
-  const ignoreRules = yield* Effect.gen(function*() {
-    if (!(yield* fs.exists(ignoreFile))) return ignore()
-    const info = yield* inspectPath(ignoreFile)
-    if (info.isSymbolicLink() || !info.isFile()) {
-      return yield* new CliError({ message: `${ignorePath} must be a regular file and may not be a symlink` })
+  const name = path.basename(root);
+  const decodedName = yield* Schema.decodeUnknownEffect(
+    SkillManifest.fields.name,
+  )(name).pipe(
+    Effect.mapError(
+      () =>
+        new CliError({
+          message: `Skill directory has an invalid name: ${name}`,
+        }),
+    ),
+  );
+  const rootRealPath = yield* fs
+    .realPath(root)
+    .pipe(
+      Effect.mapError(
+        (cause) =>
+          new CliError({
+            message: `Could not resolve ${root}: ${messageFromCause(cause)}`,
+          }),
+      ),
+    );
+  const ignoreFile = path.join(root, ignorePath);
+  const ignoreRules = yield* Effect.gen(function* () {
+    if (!(yield* fs.exists(ignoreFile))) return ignore();
+    const info = yield* inspectPath(ignoreFile);
+    if (info.type === "SymbolicLink" || info.type !== "File") {
+      return yield* new CliError({
+        message: `${ignorePath} must be a regular file and may not be a symlink`,
+      });
     }
-    const content = yield* fs.readFileString(ignoreFile).pipe(
-      Effect.mapError((cause) => new CliError({ message: `Could not read ${ignorePath}: ${messageFromCause(cause)}` }))
-    )
-    return ignore().add(content)
-  })
-  const entries: Array<ArchiveEntry> = []
-  const manifestFiles: Array<ManifestFile> = []
-  const crypto = yield* Crypto.Crypto
+    const content = yield* fs
+      .readFileString(ignoreFile)
+      .pipe(
+        Effect.mapError(
+          (cause) =>
+            new CliError({
+              message: `Could not read ${ignorePath}: ${messageFromCause(cause)}`,
+            }),
+        ),
+      );
+    return ignore().add(content);
+  });
+  const entries: Array<ArchiveEntry> = [];
+  const manifestFiles: Array<ManifestFile> = [];
+  const crypto = yield* Crypto.Crypto;
 
-  const visit = Effect.fn("visitSkillDirectory")(function*(directory: string): Effect.fn.Return<void, CliError> {
-    const children = yield* fs.readDirectory(directory).pipe(
-      Effect.mapError((cause) => new CliError({ message: `Could not read ${directory}: ${messageFromCause(cause)}` }))
-    )
-    children.sort()
+  const visit = Effect.fn("visitSkillDirectory")(function* (
+    directory: string,
+  ): Effect.fn.Return<void, CliError> {
+    const children = yield* fs
+      .readDirectory(directory)
+      .pipe(
+        Effect.mapError(
+          (cause) =>
+            new CliError({
+              message: `Could not read ${directory}: ${messageFromCause(cause)}`,
+            }),
+        ),
+      );
+    children.sort();
     for (const child of children) {
-      const absolute = path.join(directory, child)
-      const relative = path.relative(root, absolute).split(path.sep).join("/")
+      const absolute = path.join(directory, child);
+      const relative = path.relative(root, absolute).split(path.sep).join("/");
       if (relative === manifestPath) {
-        return yield* new CliError({ message: `${manifestPath} is reserved and generated by Skilldrop` })
+        return yield* new CliError({
+          message: `${manifestPath} is reserved and generated by Skilldrop`,
+        });
       }
-      if (relative === ignorePath) continue
-      const info = yield* inspectPath(absolute)
-      if (info.isSymbolicLink()) {
-        return yield* new CliError({ message: `Skills may not contain symlinks (including links outside the skill root): ${relative}` })
+      if (relative === ignorePath) continue;
+      const info = yield* inspectPath(absolute);
+      if (info.type === "SymbolicLink") {
+        return yield* new CliError({
+          message: `Skills may not contain symlinks (including links outside the skill root): ${relative}`,
+        });
       }
-      if (info.isDirectory()) {
-        if (!isIgnored(relative, true, ignoreRules)) yield* visit(absolute)
-        continue
+      if (info.type === "Directory") {
+        if (!isIgnored(relative, true, ignoreRules)) yield* visit(absolute);
+        continue;
       }
-      if (!info.isFile()) return yield* new CliError({ message: `Unsupported file type: ${relative}` })
-      if (isIgnored(relative, false, ignoreRules)) continue
-      const resolved = yield* Effect.tryPromise({
-        try: () => realpath(absolute),
-        catch: (cause) => new CliError({ message: `Could not resolve ${relative}: ${messageFromCause(cause)}` })
-      })
-      if (resolved !== rootRealPath && !resolved.startsWith(`${rootRealPath}${path.sep}`)) {
-        return yield* new CliError({ message: `Skill file resolves outside its root: ${relative}` })
+      if (info.type !== "File")
+        return yield* new CliError({
+          message: `Unsupported file type: ${relative}`,
+        });
+      if (isIgnored(relative, false, ignoreRules)) continue;
+      const resolved = yield* fs
+        .realPath(absolute)
+        .pipe(
+          Effect.mapError(
+            (cause) =>
+              new CliError({
+                message: `Could not resolve ${relative}: ${messageFromCause(cause)}`,
+              }),
+          ),
+        );
+      if (
+        resolved !== rootRealPath &&
+        !resolved.startsWith(`${rootRealPath}${path.sep}`)
+      ) {
+        return yield* new CliError({
+          message: `Skill file resolves outside its root: ${relative}`,
+        });
       }
-      if (info.size > MAX_FILE_BYTES) return yield* new CliError({ message: `File exceeds 2 MiB: ${relative}` })
-      if (entries.length >= MAX_FILES) return yield* new CliError({ message: `Skill contains more than ${MAX_FILES} files` })
-      const content = yield* fs.readFile(absolute).pipe(
-        Effect.mapError((cause) => new CliError({ message: `Could not read ${relative}: ${messageFromCause(cause)}` }))
-      )
-      const digest = yield* crypto.digest("SHA-256", content).pipe(
-        Effect.mapError((cause) => new CliError({ message: `Could not hash ${relative}: ${messageFromCause(cause)}` }))
-      )
-      const hash = Array.from(digest, (byte) => byte.toString(16).padStart(2, "0")).join("")
-      entries.push({ path: relative, content, mode: info.mode & 0o777 })
-      manifestFiles.push(new ManifestFile({ path: relative, size: content.byteLength, sha256: hash }))
+      if (info.size > FileSystem.Size(MAX_FILE_BYTES))
+        return yield* new CliError({
+          message: `File exceeds 2 MiB: ${relative}`,
+        });
+      if (entries.length >= MAX_FILES)
+        return yield* new CliError({
+          message: `Skill contains more than ${MAX_FILES} files`,
+        });
+      const content = yield* fs
+        .readFile(absolute)
+        .pipe(
+          Effect.mapError(
+            (cause) =>
+              new CliError({
+                message: `Could not read ${relative}: ${messageFromCause(cause)}`,
+              }),
+          ),
+        );
+      const digest = yield* crypto
+        .digest("SHA-256", content)
+        .pipe(
+          Effect.mapError(
+            (cause) =>
+              new CliError({
+                message: `Could not hash ${relative}: ${messageFromCause(cause)}`,
+              }),
+          ),
+        );
+      const hash = Array.from(digest, (byte) =>
+        byte.toString(16).padStart(2, "0"),
+      ).join("");
+      entries.push({ path: relative, content, mode: info.mode & 0o777 });
+      manifestFiles.push(
+        new ManifestFile({
+          path: relative,
+          size: content.byteLength,
+          sha256: hash,
+        }),
+      );
     }
-  })
+  });
 
-  yield* visit(root)
-  const skill = entries.find((entry) => entry.path === "SKILL.md")
+  yield* visit(root);
+  const skill = entries.find((entry) => entry.path === "SKILL.md");
   if (skill === undefined) {
-    return yield* new CliError({ message: "Skill must contain a non-empty root SKILL.md" })
+    return yield* new CliError({
+      message: "Skill must contain a non-empty root SKILL.md",
+    });
   }
   const skillMarkdown = yield* Effect.try({
     try: () => new TextDecoder("utf-8", { fatal: true }).decode(skill.content),
-    catch: () => new CliError({ message: "SKILL.md must be valid UTF-8" })
-  })
+    catch: () => new CliError({ message: "SKILL.md must be valid UTF-8" }),
+  });
   if (skillMarkdown.trim() === "") {
-    return yield* new CliError({ message: "Skill must contain a non-empty root SKILL.md" })
+    return yield* new CliError({
+      message: "Skill must contain a non-empty root SKILL.md",
+    });
   }
-  const manifest = new SkillManifest({ protocol_version: 1, name: decodedName, files: manifestFiles })
-  const manifestContent = new TextEncoder().encode(`${JSON.stringify(manifest, null, 2)}\n`)
-  const archive = encodeTar([...entries, { path: manifestPath, content: manifestContent, mode: 0o644 }])
+  const manifest = new SkillManifest({
+    protocol_version: 1,
+    name: decodedName,
+    files: manifestFiles,
+  });
+  const manifestContent = new TextEncoder().encode(
+    `${JSON.stringify(manifest, null, 2)}\n`,
+  );
+  const archive = encodeTar([
+    ...entries,
+    { path: manifestPath, content: manifestContent, mode: 0o644 },
+  ]);
   if (archive.byteLength > MAX_UNCOMPRESSED_BYTES) {
-    return yield* new CliError({ message: "Skill exceeds the 32 MiB uncompressed limit" })
+    return yield* new CliError({
+      message: "Skill exceeds the 32 MiB uncompressed limit",
+    });
   }
-  const id = yield* sha256(archive)
-  const bytes = yield* gzip(archive)
+  const id = yield* sha256(archive);
+  const bytes = yield* gzip(archive);
   if (bytes.byteLength > MAX_COMPRESSED_BYTES) {
-    return yield* new CliError({ message: "Skill exceeds the 10 MiB compressed limit" })
+    return yield* new CliError({
+      message: "Skill exceeds the 10 MiB compressed limit",
+    });
   }
-  return { bytes, id, manifest } satisfies SkillBundle
-})
+  return { bytes, id, manifest } satisfies SkillBundle;
+});
 
-export const verifySkillBundle = Effect.fn("verifySkillBundle")(function*(
+export const verifySkillBundle = Effect.fn("verifySkillBundle")(function* (
   compressed: Uint8Array,
-  expectedBundleHash: string
+  expectedBundleHash: string,
 ) {
-  if (compressed.byteLength === 0 || compressed.byteLength > MAX_COMPRESSED_BYTES) {
-    return yield* new CliError({ message: "Downloaded bundle exceeds the compressed size limit" })
+  if (
+    compressed.byteLength === 0 ||
+    compressed.byteLength > MAX_COMPRESSED_BYTES
+  ) {
+    return yield* new CliError({
+      message: "Downloaded bundle exceeds the compressed size limit",
+    });
   }
-  const actualBundleHash = yield* sha256(compressed)
+  const actualBundleHash = yield* sha256(compressed);
   if (actualBundleHash !== expectedBundleHash) {
-    return yield* new CliError({ message: "Downloaded bundle checksum does not match its metadata" })
+    return yield* new CliError({
+      message: "Downloaded bundle checksum does not match its metadata",
+    });
   }
-  const archive = yield* gunzip(compressed)
+  const archive = yield* gunzip(compressed);
   if (archive.byteLength > MAX_UNCOMPRESSED_BYTES) {
-    return yield* new CliError({ message: "Downloaded bundle exceeds the uncompressed size limit" })
+    return yield* new CliError({
+      message: "Downloaded bundle exceeds the uncompressed size limit",
+    });
   }
-  const entries = decodeTar(archive)
-  const manifestEntry = entries.find((entry) => entry.path === manifestPath)
-  if (manifestEntry === undefined) return yield* new CliError({ message: `Bundle has no ${manifestPath}` })
+  const entries = decodeTar(archive);
+  const manifestEntry = entries.find((entry) => entry.path === manifestPath);
+  if (manifestEntry === undefined)
+    return yield* new CliError({ message: `Bundle has no ${manifestPath}` });
   const manifestText = yield* Effect.try({
-    try: () => new TextDecoder("utf-8", { fatal: true }).decode(manifestEntry.content),
-    catch: () => new CliError({ message: "Bundle manifest is not valid UTF-8 JSON" })
-  })
-  const manifestJson = yield* Schema.decodeUnknownEffect(Schema.fromJsonString(Schema.Unknown))(manifestText).pipe(
-    Effect.mapError(() => new CliError({ message: "Bundle manifest is not valid UTF-8 JSON" }))
-  )
-  const manifest = yield* Schema.decodeUnknownEffect(SkillManifest)(manifestJson).pipe(
-    Effect.mapError(() => new CliError({ message: "Bundle manifest does not match protocol version 1" }))
-  )
-  const files = entries.filter((entry) => entry.path !== manifestPath)
-  if (files.length !== manifest.files.length) return yield* new CliError({ message: "Bundle file list does not match its manifest" })
-  const expectedPaths = new Set(manifest.files.map((file) => file.path))
-  if (expectedPaths.size !== manifest.files.length) return yield* new CliError({ message: "Bundle manifest contains duplicate paths" })
+    try: () =>
+      new TextDecoder("utf-8", { fatal: true }).decode(manifestEntry.content),
+    catch: () =>
+      new CliError({ message: "Bundle manifest is not valid UTF-8 JSON" }),
+  });
+  const manifestJson = yield* Schema.decodeUnknownEffect(
+    Schema.fromJsonString(Schema.Unknown),
+  )(manifestText).pipe(
+    Effect.mapError(
+      () =>
+        new CliError({ message: "Bundle manifest is not valid UTF-8 JSON" }),
+    ),
+  );
+  const manifest = yield* Schema.decodeUnknownEffect(SkillManifest)(
+    manifestJson,
+  ).pipe(
+    Effect.mapError(
+      () =>
+        new CliError({
+          message: "Bundle manifest does not match protocol version 1",
+        }),
+    ),
+  );
+  const files = entries.filter((entry) => entry.path !== manifestPath);
+  if (files.length !== manifest.files.length)
+    return yield* new CliError({
+      message: "Bundle file list does not match its manifest",
+    });
+  const expectedPaths = new Set(manifest.files.map((file) => file.path));
+  if (expectedPaths.size !== manifest.files.length)
+    return yield* new CliError({
+      message: "Bundle manifest contains duplicate paths",
+    });
   for (const expected of manifest.files) {
-    const entry = files.find((candidate) => candidate.path === expected.path)
+    const entry = files.find((candidate) => candidate.path === expected.path);
     if (entry === undefined || entry.content.byteLength !== expected.size) {
-      return yield* new CliError({ message: `Bundle file does not match its manifest: ${expected.path}` })
+      return yield* new CliError({
+        message: `Bundle file does not match its manifest: ${expected.path}`,
+      });
     }
-    const hash = yield* sha256(entry.content)
-    if (hash !== expected.sha256) return yield* new CliError({ message: `Bundle file checksum is invalid: ${expected.path}` })
+    const hash = yield* sha256(entry.content);
+    if (hash !== expected.sha256)
+      return yield* new CliError({
+        message: `Bundle file checksum is invalid: ${expected.path}`,
+      });
   }
-  if (!files.some((entry) => entry.path === "SKILL.md" && entry.content.byteLength > 0)) {
-    return yield* new CliError({ message: "Bundle has no non-empty root SKILL.md" })
+  if (
+    !files.some(
+      (entry) => entry.path === "SKILL.md" && entry.content.byteLength > 0,
+    )
+  ) {
+    return yield* new CliError({
+      message: "Bundle has no non-empty root SKILL.md",
+    });
   }
-  return { manifest, files }
-})
+  return { manifest, files };
+});
 
-export const installVerifiedSkill = Effect.fn("installVerifiedSkill")(function*(
-  targetRoot: string,
-  manifest: SkillManifest,
-  files: ReadonlyArray<ArchiveEntry>,
-  overwrite = false
-) {
-  const fs = yield* FileSystem.FileSystem
-  const path = yield* Path.Path
-  yield* fs.makeDirectory(targetRoot, { recursive: true }).pipe(
-    Effect.mapError((cause) => new CliError({ message: `Could not create ${targetRoot}: ${messageFromCause(cause)}` }))
-  )
-  const destination = path.join(targetRoot, manifest.name)
-  if (yield* fs.exists(destination).pipe(Effect.orElseSucceed(() => false))) {
-    if (!overwrite) return yield* new CliError({ message: `Refusing to overwrite existing skill: ${destination}` })
-    yield* fs.remove(destination, { recursive: true, force: true }).pipe(
-      Effect.mapError((cause) => new CliError({ message: `Could not replace ${destination}: ${messageFromCause(cause)}` }))
-    )
-  }
-  const staging = yield* fs.makeTempDirectory({ directory: targetRoot, prefix: ".skilldrop-" }).pipe(
-    Effect.mapError((cause) => new CliError({ message: `Could not create staging directory: ${messageFromCause(cause)}` }))
-  )
-  yield* Effect.addFinalizer(() => fs.remove(staging, { recursive: true, force: true }).pipe(Effect.ignore))
-  for (const entry of files) {
-    const output = path.join(staging, ...entry.path.split("/"))
-    yield* fs.makeDirectory(path.dirname(output), { recursive: true }).pipe(
-      Effect.mapError((cause) => new CliError({ message: `Could not create install directory: ${messageFromCause(cause)}` }))
-    )
-    yield* fs.writeFile(output, entry.content, { mode: entry.mode & 0o777 }).pipe(
-      Effect.mapError((cause) => new CliError({ message: `Could not install ${entry.path}: ${messageFromCause(cause)}` }))
-    )
-  }
-  yield* fs.rename(staging, destination).pipe(
-    Effect.mapError((cause) => new CliError({ message: `Could not finish installation: ${messageFromCause(cause)}` }))
-  )
-  return destination
-})
+export const installVerifiedSkill = Effect.fn("installVerifiedSkill")(
+  function* (
+    targetRoot: string,
+    manifest: SkillManifest,
+    files: ReadonlyArray<ArchiveEntry>,
+    overwrite = false,
+  ) {
+    const fs = yield* FileSystem.FileSystem;
+    const path = yield* Path.Path;
+    yield* fs
+      .makeDirectory(targetRoot, { recursive: true })
+      .pipe(
+        Effect.mapError(
+          (cause) =>
+            new CliError({
+              message: `Could not create ${targetRoot}: ${messageFromCause(cause)}`,
+            }),
+        ),
+      );
+    const destination = path.join(targetRoot, manifest.name);
+    if (yield* fs.exists(destination).pipe(Effect.orElseSucceed(() => false))) {
+      if (!overwrite)
+        return yield* new CliError({
+          message: `Refusing to overwrite existing skill: ${destination}`,
+        });
+      yield* fs
+        .remove(destination, { recursive: true, force: true })
+        .pipe(
+          Effect.mapError(
+            (cause) =>
+              new CliError({
+                message: `Could not replace ${destination}: ${messageFromCause(cause)}`,
+              }),
+          ),
+        );
+    }
+    const staging = yield* fs
+      .makeTempDirectory({ directory: targetRoot, prefix: ".skilldrop-" })
+      .pipe(
+        Effect.mapError(
+          (cause) =>
+            new CliError({
+              message: `Could not create staging directory: ${messageFromCause(cause)}`,
+            }),
+        ),
+      );
+    yield* Effect.addFinalizer(() =>
+      fs.remove(staging, { recursive: true, force: true }).pipe(Effect.ignore),
+    );
+    for (const entry of files) {
+      const output = path.join(staging, ...entry.path.split("/"));
+      yield* fs
+        .makeDirectory(path.dirname(output), { recursive: true })
+        .pipe(
+          Effect.mapError(
+            (cause) =>
+              new CliError({
+                message: `Could not create install directory: ${messageFromCause(cause)}`,
+              }),
+          ),
+        );
+      yield* fs
+        .writeFile(output, entry.content, { mode: entry.mode & 0o777 })
+        .pipe(
+          Effect.mapError(
+            (cause) =>
+              new CliError({
+                message: `Could not install ${entry.path}: ${messageFromCause(cause)}`,
+              }),
+          ),
+        );
+    }
+    yield* fs
+      .rename(staging, destination)
+      .pipe(
+        Effect.mapError(
+          (cause) =>
+            new CliError({
+              message: `Could not finish installation: ${messageFromCause(cause)}`,
+            }),
+        ),
+      );
+    return destination;
+  },
+);
 
-export const linkInstalledSkill = Effect.fn("linkInstalledSkill")(function*(
+export const linkInstalledSkill = Effect.fn("linkInstalledSkill")(function* (
   canonicalPath: string,
   targetRoot: string,
   skillName: string,
-  files: ReadonlyArray<ArchiveEntry>
+  files: ReadonlyArray<ArchiveEntry>,
 ) {
-  const fs = yield* FileSystem.FileSystem
-  const path = yield* Path.Path
-  const target = path.join(targetRoot, skillName)
-  if (path.resolve(target) === path.resolve(canonicalPath)) return { path: target, mode: "canonical" as const }
-  yield* fs.makeDirectory(targetRoot, { recursive: true }).pipe(
-    Effect.mapError((cause) => new CliError({ message: `Could not create ${targetRoot}: ${messageFromCause(cause)}` }))
-  )
-  yield* fs.remove(target, { recursive: true, force: true }).pipe(
-    Effect.mapError((cause) => new CliError({ message: `Could not replace ${target}: ${messageFromCause(cause)}` }))
-  )
-  const relativeTarget = path.relative(targetRoot, canonicalPath)
+  const fs = yield* FileSystem.FileSystem;
+  const path = yield* Path.Path;
+  const target = path.join(targetRoot, skillName);
+  if (path.resolve(target) === path.resolve(canonicalPath))
+    return { path: target, mode: "canonical" as const };
+  yield* fs
+    .makeDirectory(targetRoot, { recursive: true })
+    .pipe(
+      Effect.mapError(
+        (cause) =>
+          new CliError({
+            message: `Could not create ${targetRoot}: ${messageFromCause(cause)}`,
+          }),
+      ),
+    );
+  yield* fs
+    .remove(target, { recursive: true, force: true })
+    .pipe(
+      Effect.mapError(
+        (cause) =>
+          new CliError({
+            message: `Could not replace ${target}: ${messageFromCause(cause)}`,
+          }),
+      ),
+    );
+  const relativeTarget = path.relative(targetRoot, canonicalPath);
   const linked = yield* fs.symlink(relativeTarget, target).pipe(
     Effect.as(true),
-    Effect.orElseSucceed(() => false)
-  )
-  if (linked) return { path: target, mode: "symlink" as const }
-  const fallback = yield* installVerifiedSkill(targetRoot, new SkillManifest({
-    protocol_version: 1,
-    name: skillName,
-    files: []
-  }), files, true)
-  return { path: fallback, mode: "copy" as const }
-})
+    Effect.orElseSucceed(() => false),
+  );
+  if (linked) return { path: target, mode: "symlink" as const };
+  const fallback = yield* installVerifiedSkill(
+    targetRoot,
+    new SkillManifest({
+      protocol_version: 1,
+      name: skillName,
+      files: [],
+    }),
+    files,
+    true,
+  );
+  return { path: fallback, mode: "copy" as const };
+});
