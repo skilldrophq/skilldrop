@@ -1,6 +1,6 @@
 {
   "name": "@skilldrophq/cli",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Share and install agent skills with Skilldrop",
   "type": "module",
   "license": "Apache-2.0",
