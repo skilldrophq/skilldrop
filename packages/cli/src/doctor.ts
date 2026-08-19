@@ -1,5 +1,12 @@
 import { Effect, FileSystem, Path } from "effect";
 import { detectInstalledAgents, loadAgentTopology } from "./agents.ts";
+import {
+  errorMessage,
+  heading,
+  successMessage,
+  ui,
+  warningMessage,
+} from "./ui.ts";
 
 export type DoctorStatus = "pass" | "warn" | "fail";
 
@@ -87,20 +94,31 @@ export const runDoctor = Effect.fn("runDoctor")(function* () {
 });
 
 export const renderDoctorReport = (checks: ReadonlyArray<DoctorCheck>) => {
-  const symbol: Record<DoctorStatus, string> = {
-    pass: "✓",
-    warn: "!",
-    fail: "✗",
+  const renderStatus: Record<DoctorStatus, (message: string) => string> = {
+    pass: successMessage,
+    warn: warningMessage,
+    fail: errorMessage,
   };
-  const lines = ["Skilldrop doctor"];
+  const labelWidth = Math.max(...checks.map((check) => check.label.length));
+  const lines = [heading("Skilldrop doctor")];
   for (const check of checks) {
-    lines.push(`  ${symbol[check.status]} ${check.label}: ${check.detail}`);
-    if (check.fix !== undefined) lines.push(`    fix: ${check.fix}`);
+    const label = ui.bold(check.label.padEnd(labelWidth));
+    lines.push(`  ${renderStatus[check.status](`${label}  ${check.detail}`)}`);
+    if (check.fix !== undefined)
+      lines.push(`      ${ui.warning("↳")} ${ui.dim(check.fix)}`);
   }
   const passed = checks.filter((check) => check.status === "pass").length;
   const warnings = checks.filter((check) => check.status === "warn").length;
   const failures = checks.filter((check) => check.status === "fail").length;
   lines.push("");
-  lines.push(`${passed} passed · ${warnings} warnings · ${failures} failed`);
+  lines.push(
+    [
+      passed === 0 ? ui.dim("0 passed") : ui.success(`${passed} passed`),
+      warnings === 0
+        ? ui.dim("0 warnings")
+        : ui.warning(`${warnings} warnings`),
+      failures === 0 ? ui.dim("0 failed") : ui.danger(`${failures} failed`),
+    ].join(ui.dim("  ·  ")),
+  );
   return lines.join("\n");
 };

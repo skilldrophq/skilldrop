@@ -7,6 +7,7 @@ import {
   type SkillScope,
 } from "./agents.ts";
 import { CliError, messageFromCause } from "./errors.ts";
+import { heading, ui, warningMessage } from "./ui.ts";
 
 export type { AgentRoot as SkillRoot, SkillScope } from "./agents.ts";
 
@@ -74,7 +75,7 @@ export const loadInstalledSkills = Effect.fn("loadInstalledSkills")(function* (
   return yield* discoverInstalledSkills(rootsForScopes(topology, scopes));
 });
 
-export const dim = (text: string) => `\u001b[2m${text}\u001b[22m`;
+export const dim = ui.dim;
 
 export const skillAgentGroup = (skill: InstalledSkill) => {
   const universal = skill.agents.find((agent) => agent.name === "universal");
@@ -96,7 +97,7 @@ const groupBy = <A>(items: ReadonlyArray<A>, keyOf: (item: A) => string) => {
 export const renderInstalledSkills = (
   skills: ReadonlyArray<InstalledSkill>,
 ) => {
-  if (skills.length === 0) return "No installed skills found";
+  if (skills.length === 0) return warningMessage("No installed skills found");
   const deduplicated = new Map<
     string,
     {
@@ -129,25 +130,22 @@ export const renderInstalledSkills = (
     paths: [...entry.paths].sort((left, right) => left.localeCompare(right)),
   }));
   const groups = groupBy(entries, (entry) => entry.group);
-  const lines = [`Installed skills (${entries.length})`];
+  const lines = [heading("Installed skills", `${entries.length} total`)];
   for (const [group, groupedSkills] of [...groups].sort(([left], [right]) =>
     left.localeCompare(right),
   )) {
-    lines.push("", group);
+    lines.push("", `${ui.accent("●")} ${ui.bold(group)}`);
     const scopes = groupBy(groupedSkills, (entry) => entry.scope);
     for (const scope of ["project", "global"] as const) {
       const scopedEntries = scopes.get(scope);
       if (scopedEntries === undefined) continue;
-      lines.push(`  ${scope}`);
+      lines.push(`  ${ui.dim(scope.toUpperCase())}`);
       for (const entry of scopedEntries.sort((left, right) =>
         left.name.localeCompare(right.name),
       )) {
-        if (entry.paths.length === 1) {
-          lines.push(`    ${entry.name}  ${entry.paths[0]}`);
-        } else {
-          lines.push(`    ${entry.name}`);
-          for (const path of entry.paths) lines.push(`      ${path}`);
-        }
+        lines.push(`    ${ui.bold(entry.name)}`);
+        for (const path of entry.paths)
+          lines.push(`      ${ui.dim("↳")} ${ui.path(path)}`);
       }
     }
   }

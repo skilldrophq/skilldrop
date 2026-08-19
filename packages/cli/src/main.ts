@@ -4,6 +4,7 @@ import { Command } from "effect/unstable/cli";
 import pkg from "../package.json" with { type: "json" };
 import { SkilldropApi } from "./api.ts";
 import { makeCommand } from "./commands.ts";
+import { errorMessage } from "./ui.ts";
 
 const version = pkg.version;
 
@@ -14,7 +15,9 @@ const program = Effect.gen(function* () {
   return yield* makeCommand(devMode).pipe(Command.run({ version }));
 }).pipe(
   Effect.catchTag("CliError", (error) =>
-    Console.error(error.message).pipe(Effect.andThen(Effect.fail(error))),
+    Console.error(errorMessage(error.message)).pipe(
+      Effect.andThen(Effect.fail(error)),
+    ),
   ),
 );
 

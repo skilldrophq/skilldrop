@@ -51,17 +51,17 @@ describe("snapshot inspection", () => {
     ]);
 
     expect(output).toContain(`Snapshot ${id}`);
-    expect(output).toContain("protocol: 1");
-    expect(output).toContain("bundle: 5.0 KiB (5120 bytes)");
-    expect(output).toContain(`bundle sha256: ${bundleHash.slice(0, 7)}…`);
-    expect(output).toContain(`sha256: ${markdownHash.slice(0, 7)}…`);
+    expect(output).toContain("protocol   1");
+    expect(output).toContain("bundle     5.0 KiB (5120 bytes)");
+    expect(output).toContain(`sha256     ${bundleHash.slice(0, 7)}…`);
+    expect(output).toContain(`sha256  ${markdownHash.slice(0, 7)}…`);
     expect(output).not.toContain(bundleHash);
     expect(output).not.toContain(markdownHash);
-    expect(output).toContain("mode: 0755 executable");
+    expect(output).toContain("mode    0755 executable");
     expect(output).toContain(
-      "Executable files (1)\n  warning: review these files before installing\n  scripts/check.sh",
+      "Executable files · 1\n  ! Review before installing\n  scripts/check.sh",
     );
-    expect(output).toContain(`Install with: sk install ${id}`);
+    expect(output).toContain(`Run  sk install ${id}`);
 
     const installPreview = renderSnapshotInspection(
       metadata,
@@ -72,7 +72,7 @@ describe("snapshot inspection", () => {
       { includeInstallCommand: false },
     );
     expect(installPreview).not.toContain("Install with:");
-    expect(installPreview).toContain("Executable files (1)");
+    expect(installPreview).toContain("Executable files · 1");
   });
 
   test("reports when the snapshot has no executable files", () => {
@@ -95,7 +95,7 @@ describe("snapshot inspection", () => {
       { path: "SKILL.md", content: new Uint8Array(12), mode: 0o644 },
     ]);
 
-    expect(output).toContain("Executable files (0)\n  none");
+    expect(output).toContain("Executable files · 0\n  None");
   });
 
   test("verifies downloaded snapshot metadata and bundle contents", async () => {

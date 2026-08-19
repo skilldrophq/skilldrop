@@ -29,6 +29,15 @@ import {
 } from "./local-skills.ts";
 import { buildSkillBundle, verifySkillBundle } from "./skill.ts";
 import { loadVerifiedSnapshot, publishSnapshot } from "./snapshots.ts";
+import {
+  commandHint,
+  heading,
+  rows,
+  section,
+  successMessage,
+  ui,
+  warningMessage,
+} from "./ui.ts";
 
 const productionApiUrl = "https://skilldrop.dev";
 const bundledSkillPath = fileURLToPath(
@@ -41,13 +50,18 @@ const renderOutboundManifest = (bundle: {
   readonly manifest: SkillManifest;
 }) =>
   [
-    `Outbound files (${bundle.manifest.files.length + 1}):`,
+    heading("Outbound bundle", bundle.manifest.name),
+    "",
+    section("Files", bundle.manifest.files.length + 1),
     ...bundle.manifest.files.map(
-      (file) => `  ${file.path} (${file.size} bytes)`,
+      (file) => `  ${ui.path(file.path)} ${ui.dim(`${file.size} bytes`)}`,
     ),
-    "  skilldrop.manifest.json (generated)",
-    `Bundle: ${bundle.bytes.byteLength} bytes compressed`,
-    `Content ID: ${bundle.id}`,
+    `  ${ui.path("skilldrop.manifest.json")} ${ui.dim("generated")}`,
+    "",
+    ...rows([
+      ["compressed", `${bundle.bytes.byteLength} bytes`],
+      ["content ID", bundle.id],
+    ]),
   ].join("\n");
 
 export const makeCommand = (devMode: boolean) => {
@@ -138,18 +152,24 @@ export const makeCommand = (devMode: boolean) => {
           }),
         onSome: Effect.succeed,
       });
-      yield* Console.log(`Validating ${selectedPath}…`);
+      yield* Console.log(
+        `${ui.accent("◇")} Validating ${ui.path(selectedPath)}…`,
+      );
       const bundle = yield* buildSkillBundle(selectedPath);
       yield* Console.log(renderOutboundManifest(bundle));
       if (Option.isSome(dryRun) && dryRun.value) {
-        yield* Console.log("Dry run complete; nothing was uploaded");
+        yield* Console.log(
+          successMessage("Dry run complete — nothing uploaded"),
+        );
         return;
       }
       const apiUrl = yield* getApiUrl();
       const published = yield* publishSnapshot(apiUrl, bundle);
-      yield* Console.log(`Shared ${bundle.manifest.name}`);
-      yield* Console.log(published.url);
-      yield* Console.log(`Install with: sk install ${published.url}`);
+      yield* Console.log(
+        successMessage(`Shared ${ui.bold(bundle.manifest.name)}`),
+      );
+      yield* Console.log(ui.accent(published.url));
+      yield* Console.log(commandHint(`sk install ${published.url}`));
     }),
   ).pipe(
     Command.withDescription("Create an immutable snapshot of a local skill"),
@@ -175,9 +195,15 @@ export const makeCommand = (devMode: boolean) => {
     },
     Effect.fn("validateCommand")(function* ({ path }) {
       const bundle = yield* buildSkillBundle(path);
-      yield* Console.log(`Valid ${bundle.manifest.name}`);
-      yield* Console.log(`  files: ${bundle.manifest.files.length}`);
-      yield* Console.log(`  bundle: ${bundle.bytes.byteLength} bytes`);
+      yield* Console.log(
+        successMessage(`Valid ${ui.bold(bundle.manifest.name)}`),
+      );
+      yield* Console.log(
+        rows([
+          ["files", String(bundle.manifest.files.length)],
+          ["bundle", `${bundle.bytes.byteLength} bytes`],
+        ]).join("\n"),
+      );
     }),
   ).pipe(
     Command.withDescription("Validate a local skill without sharing it"),
@@ -339,16 +365,20 @@ export const makeCommand = (devMode: boolean) => {
         Prompt.confirm({ message: "Proceed with installation?" }),
       );
       if (!confirmed) {
-        yield* Console.log("Installation cancelled");
+        yield* Console.log(warningMessage("Installation cancelled"));
         return;
       }
     }
 
     const result = yield* executeInstallation(plan, verified);
     for (const fallback of result.fallbackCopies) {
-      yield* Console.log(`Symlink unavailable; copied to ${fallback}`);
+      yield* Console.log(
+        warningMessage(`Symlink unavailable — copied to ${ui.path(fallback)}`),
+      );
     }
-    yield* Console.log(`Installed ${verified.manifest.name}`);
+    yield* Console.log(
+      successMessage(`Installed ${ui.bold(verified.manifest.name)}`),
+    );
   });
 
   const install = Command.make(

@@ -3,6 +3,14 @@ import type { SnapshotMetadata } from "./api.ts";
 import type { ArchiveEntry } from "./archive.ts";
 import { CliError } from "./errors.ts";
 import { verifySkillBundle } from "./skill.ts";
+import {
+  commandHint,
+  heading,
+  rows,
+  section,
+  ui,
+  warningMessage,
+} from "./ui.ts";
 
 const formatBytes = (bytes: number) => {
   if (bytes < 1024) return `${bytes} B`;
@@ -39,39 +47,56 @@ export const renderSnapshotInspection = (
   const entriesByPath = new Map(files.map((file) => [file.path, file]));
   const executableFiles = files.filter((file) => isExecutable(file.mode));
   const lines = [
-    `Snapshot ${metadata.id}`,
-    `  skill: ${metadata.manifest.name}`,
-    `  protocol: ${metadata.manifest.protocol_version}`,
-    `  uploaded: ${metadata.uploaded_at}`,
-    `  bundle: ${formatBytes(metadata.size)} (${metadata.size} bytes)`,
-    `  bundle sha256: ${shortHash(metadata.sha256)}`,
-    "  integrity: verified",
+    heading("Snapshot", metadata.id),
+    ...rows([
+      ["skill", ui.bold(metadata.manifest.name)],
+      ["protocol", String(metadata.manifest.protocol_version)],
+      ["uploaded", metadata.uploaded_at],
+      [
+        "bundle",
+        `${formatBytes(metadata.size)} ${ui.dim(`(${metadata.size} bytes)`)}`,
+      ],
+      ["sha256", shortHash(metadata.sha256)],
+      ["integrity", ui.success("✓ verified")],
+    ]),
     "",
-    `Files (${metadata.manifest.files.length})`,
+    section("Files", metadata.manifest.files.length),
   ];
 
   for (const file of metadata.manifest.files) {
     const entry = entriesByPath.get(file.path)!;
-    const executable = isExecutable(entry.mode) ? " executable" : "";
-    lines.push(`  ${file.path}`);
-    lines.push(`    size: ${formatBytes(file.size)} (${file.size} bytes)`);
-    lines.push(`    sha256: ${shortHash(file.sha256)}`);
+    const executable = isExecutable(entry.mode);
+    const mode = entry.mode.toString(8).padStart(4, "0");
+    lines.push(`  ${ui.path(file.path)}`);
     lines.push(
-      `    mode: ${entry.mode.toString(8).padStart(4, "0")}${executable}`,
+      ...rows(
+        [
+          [
+            "size",
+            `${formatBytes(file.size)} ${ui.dim(`(${file.size} bytes)`)}`,
+          ],
+          ["sha256", shortHash(file.sha256)],
+          [
+            "mode",
+            `${mode}${executable ? ` ${ui.warning("executable")}` : ""}`,
+          ],
+        ],
+        "    ",
+      ),
     );
   }
 
   lines.push("");
-  lines.push(`Executable files (${executableFiles.length})`);
+  lines.push(section("Executable files", executableFiles.length));
   if (executableFiles.length === 0) {
-    lines.push("  none");
+    lines.push(`  ${ui.dim("None")}`);
   } else {
-    lines.push("  warning: review these files before installing");
-    for (const file of executableFiles) lines.push(`  ${file.path}`);
+    lines.push(`  ${warningMessage("Review before installing")}`);
+    for (const file of executableFiles) lines.push(`  ${ui.path(file.path)}`);
   }
   if (options.includeInstallCommand !== false) {
     lines.push("");
-    lines.push(`Install with: sk install ${metadata.id}`);
+    lines.push(commandHint(`sk install ${metadata.id}`));
   }
   return lines.join("\n");
 };

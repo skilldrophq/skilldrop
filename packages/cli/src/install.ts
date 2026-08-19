@@ -2,6 +2,7 @@ import { Effect, FileSystem, Path } from "effect";
 import type { AgentSelection } from "./agents.ts";
 import type { ArchiveEntry, SkillManifest } from "./archive.ts";
 import { installVerifiedSkill, linkInstalledSkill } from "./skill.ts";
+import { heading, rows, section, ui, warningMessage } from "./ui.ts";
 
 export interface InstallableSkill {
   readonly manifest: SkillManifest;
@@ -69,13 +70,33 @@ export const prepareInstallation = Effect.fn("prepareInstallation")(
 
 export const renderInstallationPlan = (plan: InstallationPlan) => {
   const lines = [
-    `Install ${plan.skillName} (${plan.fileCount} files)`,
-    `  scope: ${plan.scope}`,
-    `  agents: ${plan.agents.map((agent) => agent.displayName).join(", ")}`,
-    `  method: ${plan.mode}`,
-    ...plan.destinations.map((destination) => `  → ${destination}`),
-    ...plan.existing.map((destination) => `  overwrites: ${destination}`),
+    heading(
+      "Install",
+      `${plan.skillName} · ${plan.fileCount} ${plan.fileCount === 1 ? "file" : "files"}`,
+    ),
+    ...rows([
+      ["scope", plan.scope],
+      ["agents", plan.agents.map((agent) => agent.displayName).join(", ")],
+      ["method", plan.mode],
+    ]),
+    "",
+    section("Destinations", plan.destinations.length),
+    ...plan.destinations.map(
+      (destination) => `  ${ui.accent("→")} ${ui.path(destination)}`,
+    ),
   ];
+  if (plan.existing.length > 0) {
+    const noun = plan.existing.length === 1 ? "installation" : "installations";
+    lines.push(
+      "",
+      warningMessage(
+        `${plan.existing.length} existing ${noun} will be replaced`,
+      ),
+    );
+    lines.push(
+      ...plan.existing.map((destination) => `  ${ui.path(destination)}`),
+    );
+  }
   return lines.join("\n");
 };
 

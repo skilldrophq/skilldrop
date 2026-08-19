@@ -75,7 +75,9 @@ describe("skill installation", () => {
     expect(plan.destinations).toHaveLength(2);
     expect(plan.existing).toHaveLength(1);
     expect(plan.existing[0]).toEndWith("claude/review-pr");
-    expect(renderInstallationPlan(plan)).toContain("overwrites:");
+    const output = renderInstallationPlan(plan);
+    expect(output).toContain("Destinations · 2");
+    expect(output).toContain("! 1 existing installation will be replaced");
   });
 
   test("executes the prepared plan through copy fallback reporting", async () => {
