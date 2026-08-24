@@ -3,8 +3,11 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import "../../styles/precision.css";
 
 const installCommand = "curl -fsSL https://getsk.dev/install.sh | sh";
-const shareCommand = "sk share ~/.claude/skills/review-pr";
-const inspectCommand = "sk inspect https://skilldrop.dev/s/PL1mY4-";
+const shareCommand = "sk share ~/.claude/skills/code-review";
+const snapshotId = "1f633d5";
+const snapshotUrl = `https://skilldrop.dev/s/${snapshotId}`;
+const snapshotViewerUrl = `https://skilldrop.dev/snapshot/?id=${snapshotId}`;
+const inspectCommand = `sk inspect ${snapshotUrl}`;
 const installMethods = [
   { label: "script", command: installCommand },
   { label: "npm", command: "npm install --global @skilldrophq/cli" },
@@ -64,7 +67,7 @@ const softwareSchema = {
         </div>
         <div class="td-hero-actions">
           <a class="td-script-link" href="https://getsk.dev/install.sh">View script <span aria-hidden="true">↗</span></a>
-          <a class="td-button td-button-secondary" href="/example-snapshot/" data-s-event="example_snapshot_open">View an example snapshot</a>
+          <a class="td-button td-button-secondary" href={snapshotViewerUrl} data-s-event="example_snapshot_open">View an example snapshot</a>
         </div>
         <p class="td-trust-line">Open source <span>·</span> nothing executes automatically <span>·</span> unlisted links expire after 7 days</p>
       </div>
@@ -73,28 +76,28 @@ const softwareSchema = {
         <figure class="td-surface td-terminal" aria-label="Terminal session sharing a local skill">
           <figcaption class="td-chrome">
             <span class="td-tab">share · zsh</span>
-            <span class="td-chrome-path">~/skills/review-pr</span>
+            <span class="td-chrome-path">~/skills/code-review</span>
             <button type="button" class="td-icon-button" data-copy={shareCommand} aria-label="Copy share command">
               <svg class="td-copy-icon" viewBox="0 0 18 18" aria-hidden="true"><rect x="6" y="5" width="8" height="9"></rect><path d="M4 11H3V3h8v1"></path></svg>
               <svg class="td-check-icon" viewBox="0 0 18 18" aria-hidden="true"><path d="m3.5 9 3.3 3.3 7.7-7.6"></path></svg>
             </button>
           </figcaption>
           <div class="td-terminal-body" role="region" aria-label="Scrollable terminal output" tabindex="0">
-            <div class="td-code-line"><span class="td-line-no">1</span><code><span class="td-prompt">$</span> sk share ~/.claude/skills/review-pr</code></div>
-            <div class="td-code-line"><span class="td-line-no">2</span><code class="td-comment">Validating ~/.claude/skills/review-pr…</code></div>
-            <div class="td-code-line"><span class="td-line-no">3</span><code><span class="td-success">Shared</span> review-pr</code></div>
-            <div class="td-code-line td-marked-line"><span class="td-line-no">4</span><code><a href="#inspect">https://skilldrop.dev/s/PL1mY4-</a></code></div>
-            <div class="td-code-line"><span class="td-line-no">5</span><code class="td-dim">Install with: sk install https://skilldrop.dev/s/PL1mY4-</code></div>
+            <div class="td-code-line"><span class="td-line-no">1</span><code><span class="td-prompt">$</span> {shareCommand}</code></div>
+            <div class="td-code-line"><span class="td-line-no">2</span><code class="td-comment">Validating ~/.claude/skills/code-review…</code></div>
+            <div class="td-code-line"><span class="td-line-no">3</span><code><span class="td-success">Shared</span> code-review</code></div>
+            <div class="td-code-line td-marked-line"><span class="td-line-no">4</span><code><a href={snapshotViewerUrl}>{snapshotUrl}</a></code></div>
+            <div class="td-code-line"><span class="td-line-no">5</span><code class="td-dim">Install with: sk install {snapshotUrl}</code></div>
             <div class="td-code-line"><span class="td-line-no">6</span><code> </code></div>
-            <div class="td-code-line"><span class="td-line-no">7</span><code><span class="td-prompt">$</span> sk inspect https://skilldrop.dev/s/PL1mY4-</code></div>
-            <div class="td-code-line"><span class="td-line-no">8</span><code>Snapshot <span class="td-function">PL1mY4-</span></code></div>
-            <div class="td-code-line"><span class="td-line-no">9</span><code>  skill: review-pr</code></div>
-            <div class="td-code-line"><span class="td-line-no">10</span><code>  bundle: 4.9 KiB <span class="td-dim">(5018 bytes)</span></code></div>
+            <div class="td-code-line"><span class="td-line-no">7</span><code><span class="td-prompt">$</span> {inspectCommand}</code></div>
+            <div class="td-code-line"><span class="td-line-no">8</span><code>Snapshot <span class="td-function">{snapshotId}</span></code></div>
+            <div class="td-code-line"><span class="td-line-no">9</span><code>  skill: code-review</code></div>
+            <div class="td-code-line"><span class="td-line-no">10</span><code>  bundle: 1.3 KiB <span class="td-dim">(1335 bytes)</span></code></div>
             <div class="td-code-line"><span class="td-line-no">11</span><code>  integrity: <span class="td-success">verified</span></code></div>
-            <div class="td-code-line"><span class="td-line-no">12</span><code>  expires: <span class="td-number">Aug 29, 2026 at 14:32 UTC</span></code></div>
+            <div class="td-code-line"><span class="td-line-no">12</span><code>  files: <span class="td-number">4</span></code></div>
             <div class="td-code-line"><span class="td-line-no">13</span><code> </code></div>
-            <div class="td-code-line"><span class="td-line-no">14</span><code><span class="td-prompt">$</span> sk install PL1mY4- --agent codex</code></div>
-            <div class="td-code-line td-marked-line"><span class="td-line-no">15</span><code><span class="td-success">Installed</span> review-pr → .agents/skills/review-pr</code></div>
+            <div class="td-code-line"><span class="td-line-no">14</span><code><span class="td-prompt">$</span> sk install {snapshotId} --agent codex</code></div>
+            <div class="td-code-line td-marked-line"><span class="td-line-no">15</span><code><span class="td-success">Installed</span> code-review → .agents/skills/code-review</code></div>
           </div>
           <div class="td-terminal-foot"><span><i></i> snapshot online</span><span>exit 0</span></div>
         </figure>
@@ -119,17 +122,17 @@ const softwareSchema = {
         <article>
           <div class="td-command-title"><span>01</span><h3>Share it where it lives.</h3></div>
           <p>Run <code>sk share</code> on any folder with a <code>SKILL.md</code>.</p>
-          <div class="td-mini-command"><code><span>$</span> sk share ./review-pr</code><button data-copy="sk share ./review-pr" aria-label="Copy share example">copy</button></div>
+          <div class="td-mini-command"><code><span>$</span> sk share ./code-review</code><button data-copy="sk share ./code-review" aria-label="Copy share example">copy</button></div>
         </article>
         <article>
           <div class="td-command-title"><span>02</span><h3>Review the exact snapshot.</h3></div>
           <p>See every file, checksum, executable, and the exact expiration time.</p>
-          <div class="td-mini-command"><code><span>$</span> sk inspect PL1mY4-</code><button data-copy="sk inspect PL1mY4-" aria-label="Copy inspect example">copy</button></div>
+          <div class="td-mini-command"><code><span>$</span> sk inspect {snapshotId}</code><button data-copy={`sk inspect ${snapshotId}`} aria-label="Copy inspect example">copy</button></div>
         </article>
         <article>
           <div class="td-command-title"><span>03</span><h3>Install it for your agent.</h3></div>
           <p>One command for Claude Code, Codex, or the agent you already use.</p>
-          <div class="td-mini-command"><code><span>$</span> sk install PL1mY4- --agent codex</code><button data-copy="sk install PL1mY4- --agent codex" aria-label="Copy install example">copy</button></div>
+          <div class="td-mini-command"><code><span>$</span> sk install {snapshotId} --agent codex</code><button data-copy={`sk install ${snapshotId} --agent codex`} aria-label="Copy install example">copy</button></div>
         </article>
       </div>
     </section>
@@ -151,21 +154,23 @@ const softwareSchema = {
             </button>
           </figcaption>
           <div class="td-manifest">
-            <div class="td-manifest-lead"><div><span>snapshot</span><strong>review-pr</strong></div><span class="td-verified">✓ verified</span></div>
+            <div class="td-manifest-lead"><div><span>snapshot</span><strong><a href={snapshotViewerUrl}>code-review</a></strong></div><span class="td-verified">✓ verified</span></div>
             <dl>
-              <div><dt>snapshot id</dt><dd>PL1mY4-</dd></div>
+              <div><dt>snapshot id</dt><dd>{snapshotId}</dd></div>
               <div><dt>protocol</dt><dd>1</dd></div>
-              <div><dt>bundle</dt><dd>4.9 KiB · 5018 bytes</dd></div>
-              <div><dt>bundle sha256</dt><dd>5af18c2…</dd></div>
-              <div><dt>expires</dt><dd>Aug 29 · 14:32 UTC</dd></div>
+              <div><dt>bundle</dt><dd>1.3 KiB · 1335 bytes</dd></div>
+              <div><dt>bundle sha256</dt><dd>47c5c44…</dd></div>
+              <div><dt>uploaded</dt><dd>Aug 24 · 21:37 UTC</dd></div>
               <div><dt>visibility</dt><dd>unlisted, not private</dd></div>
-              <div><dt>files</dt><dd>2</dd></div>
+              <div><dt>files</dt><dd>4</dd></div>
               <div><dt>executables</dt><dd>none</dd></div>
             </dl>
             <div class="td-file-tree">
-              <p><span>review-pr/</span><small>sha256</small></p>
-              <p><span>├─ SKILL.md</span><small>9cf2…41b8</small></p>
-              <p><span>└─ references/checklist.md</span><small>01aa…7e0f</small></p>
+              <p><span>code-review/</span><small>sha256</small></p>
+              <p><span>├─ SKILL.md</span><small>9d3331c…</small></p>
+              <p><span>├─ references/checklist.md</span><small>c4d17e7…</small></p>
+              <p><span>├─ references/severity.md</span><small>a4d4295…</small></p>
+              <p><span>└─ templates/review.md</span><small>02fb346…</small></p>
             </div>
           </div>
         </figure>
