@@ -1,0 +1,112 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import "../../styles/precision.css";
+import "../../styles/snapshot.css";
+
+const snapshotId = "PL1mY4-";
+const installCommand = `sk install https://skilldrop.dev/s/${snapshotId}`;
+const files = [
+  { path: "SKILL.md", size: "2.8 KiB", hash: "9cf2…41b8", executable: false },
+  { path: "references/checklist.md", size: "1.9 KiB", hash: "01aa…7e0f", executable: false },
+];
+---
+
+<BaseLayout
+  title="review-pr — Example Skilldrop snapshot"
+  description="Preview an inspectable Skilldrop snapshot with its manifest, file tree, checksums, expiration, and install command."
+  bodyClass="td-body snapshot-body"
+  themeColor="#0A0B0D"
+  favicon="/favicon-dark.svg"
+  robots="index, follow"
+>
+  <a class="td-skip" href="#snapshot">Skip to snapshot</a>
+  <header class="td-header">
+    <div class="td-wrap td-nav-shell">
+      <a class="td-brand" href="/" aria-label="Skilldrop home">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M5.5 9.5h21v16h-21z"></path><path d="M16 3.5v14m0 0 5-5m-5 5-5-5"></path></svg>
+        <span>skilldrop</span><code>snapshot</code>
+      </a>
+      <nav class="td-nav" aria-label="Snapshot navigation">
+        <a href="/security/">Security</a>
+        <a class="td-nav-source" href="/">Share a skill <span aria-hidden="true">→</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="snapshot" class="snapshot-main td-wrap" data-s-view-props="page_type=example_snapshot">
+    <header class="snapshot-heading">
+      <div>
+        <p class="td-status"><span></span> Example snapshot · read-only preview</p>
+        <h1>review-pr</h1>
+        <p>A local pull-request review skill, shared as one exact artifact.</p>
+      </div>
+      <div class="snapshot-state"><span>verified</span><strong>Unlisted, not private</strong><small>Live snapshots are available to anyone with the link.</small></div>
+    </header>
+
+    <section class="snapshot-grid" aria-label="Snapshot details">
+      <div class="snapshot-primary">
+        <section class="snapshot-panel snapshot-command" aria-labelledby="install-heading">
+          <div class="snapshot-label"><span>01</span><h2 id="install-heading">Install this skill</h2></div>
+          <div class="snapshot-install-row">
+            <span class="td-prompt" aria-hidden="true">$</span>
+            <code>{installCommand}</code>
+            <button type="button" data-copy={installCommand} data-s-event="install_command_copy" data-s-event-props="command_variant=example_snapshot"><span>Copy</span><b aria-hidden="true">✓ Copied</b></button>
+          </div>
+          <p>Skilldrop verifies the snapshot again before writing any files. Nothing in the skill executes automatically.</p>
+        </section>
+
+        <section class="snapshot-panel" aria-labelledby="files-heading">
+          <div class="snapshot-label"><span>02</span><h2 id="files-heading">Files</h2><code>{files.length} total · 0 executable</code></div>
+          <div class="snapshot-files">
+            {files.map((file) => (
+              <div class="snapshot-file">
+                <span aria-hidden="true">{file.executable ? "◆" : "◇"}</span>
+                <strong>{file.path}</strong>
+                <small>{file.size}</small>
+                <code>sha256 {file.hash}</code>
+              </div>
+            ))}
+          </div>
+          <a class="snapshot-raw-link" href="/example-snapshot/raw">Open raw manifest <span aria-hidden="true">↗</span></a>
+        </section>
+      </div>
+
+      <aside class="snapshot-panel snapshot-manifest" aria-labelledby="manifest-heading">
+        <div class="snapshot-label"><span>03</span><h2 id="manifest-heading">Manifest</h2></div>
+        <dl>
+          <div><dt>snapshot</dt><dd>{snapshotId}</dd></div>
+          <div><dt>created</dt><dd><time datetime="2026-08-22T14:32:00Z">Aug 22, 2026<br />14:32 UTC</time></dd></div>
+          <div><dt>expires</dt><dd><time datetime="2026-08-29T14:32:00Z">Aug 29, 2026<br />14:32 UTC</time></dd></div>
+          <div><dt>lifetime</dt><dd>7 days</dd></div>
+          <div><dt>bundle</dt><dd>4.9 KiB</dd></div>
+          <div><dt>protocol</dt><dd>1</dd></div>
+          <div><dt>executables</dt><dd class="snapshot-safe">none</dd></div>
+        </dl>
+        <div class="snapshot-hash"><span>bundle sha256</span><code>5af18c2b5c1d4d3db9e90e6c8d39d40f…</code></div>
+        <p class="snapshot-note"><strong>Why can I still view this?</strong> This is a permanent, non-installable example. Real snapshot data is deleted after its exact expiry time.</p>
+      </aside>
+    </section>
+  </main>
+
+  <div class="td-toast" role="status" aria-live="polite">Copied to clipboard</div>
+  <script>
+    const analyticsWindow = window as typeof window & { stonks?: { event: (name: string, props?: Record<string, string>) => void } };
+    window.addEventListener("load", () => analyticsWindow.stonks?.event("snapshot_human_view", { source: "example_snapshot" }), { once: true });
+
+    const toast = document.querySelector<HTMLElement>(".td-toast");
+    let toastTimeout: number | undefined;
+    document.querySelectorAll<HTMLButtonElement>("[data-copy]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const value = button.dataset.copy;
+        if (!value) return;
+        try {
+          await navigator.clipboard.writeText(value);
+          button.classList.add("is-copied");
+          toast?.classList.add("is-visible");
+          window.clearTimeout(toastTimeout);
+          toastTimeout = window.setTimeout(() => toast?.classList.remove("is-visible"), 1600);
+        } catch { window.prompt("Copy this command:", value); }
+      });
+    });
+  </script>
+</BaseLayout>

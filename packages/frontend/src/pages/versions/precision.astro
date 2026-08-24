@@ -26,8 +26,8 @@ const softwareSchema = {
 ---
 
 <BaseLayout
-  title="Share local agent skills — Skilldrop"
-  description="Package a local agent skill into an immutable link your team can inspect and install. No repository or account required."
+  title="Share a local Agent Skill with one link — Skilldrop"
+  description="Share a local Claude Code, Codex, or Agent Skill as an immutable 7-day link. No Git repository or account. Inspect every file before installing."
   bodyClass="td-body"
   themeColor="#0A0B0D"
   favicon="/favicon-dark.svg"
@@ -41,7 +41,7 @@ const softwareSchema = {
     <div class="td-wrap td-nav-shell">
       <a class="td-brand" href="/" aria-label="Skilldrop home">
         <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M5.5 9.5h21v16h-21z"></path><path d="M16 3.5v14m0 0 5-5m-5 5-5-5"></path></svg>
-        <span>skilldrop</span><code>v0.1</code>
+        <span>skilldrop</span><code>open source</code>
       </a>
       <nav class="td-nav" aria-label="Primary navigation">
         <a href="/docs/">Docs</a>
@@ -52,21 +52,21 @@ const softwareSchema = {
     </div>
   </header>
 
-  <main id="main">
+  <main id="main" data-s-view-props="landing_variant=handoff_v1">
     <section class="td-hero td-wrap" aria-labelledby="hero-title">
       <div class="td-hero-copy">
-        <p class="td-status"><span></span> CLI for agent skills</p>
-        <h1 id="hero-title">Send the skill.<br /><span>Skip the setup instructions.</span></h1>
-        <p class="td-lede">Turn any local Claude Code, Codex, or compatible agent skill into an immutable link. Your teammate can inspect every file before installing it.</p>
-        <div class="td-hero-actions">
-          <a class="td-button td-button-primary" href="#install">Install the CLI <span aria-hidden="true">→</span></a>
-          <a class="td-button td-button-secondary" href="/docs/">Read the docs</a>
+        <p class="td-status"><span></span> A transfer layer for Agent Skills</p>
+        <h1 id="hero-title">Share a local agent skill <span>in one command.</span></h1>
+        <p class="td-lede">Turn any Claude Code, Codex, or compatible skill folder into an immutable link that expires after 7 days. Your teammate can inspect every file, then install it—no repo, account, or marketplace.</p>
+        <div class="td-hero-install" aria-label="Install Skilldrop">
+          <div><span class="td-prompt" aria-hidden="true">$</span><code>{installCommand}</code></div>
+          <button type="button" data-copy={installCommand} data-s-event="install_command_copy" data-s-event-props="command_variant=script"><span>Copy install command</span><b aria-hidden="true">✓ Copied</b></button>
         </div>
-        <dl class="td-hero-meta">
-          <div><dt>account</dt><dd>not required</dd></div>
-          <div><dt>repository</dt><dd>not required</dd></div>
-          <div><dt>snapshots</dt><dd>immutable</dd></div>
-        </dl>
+        <div class="td-hero-actions">
+          <a class="td-script-link" href="https://getsk.dev/install.sh">View script <span aria-hidden="true">↗</span></a>
+          <a class="td-button td-button-secondary" href="/example-snapshot/" data-s-event="example_snapshot_open">View an example snapshot</a>
+        </div>
+        <p class="td-trust-line">Open source <span>·</span> nothing executes automatically <span>·</span> unlisted links expire after 7 days</p>
       </div>
 
       <div class="td-frame td-hero-frame">
@@ -91,43 +91,44 @@ const softwareSchema = {
             <div class="td-code-line"><span class="td-line-no">9</span><code>  skill: review-pr</code></div>
             <div class="td-code-line"><span class="td-line-no">10</span><code>  bundle: 4.9 KiB <span class="td-dim">(5018 bytes)</span></code></div>
             <div class="td-code-line"><span class="td-line-no">11</span><code>  integrity: <span class="td-success">verified</span></code></div>
+            <div class="td-code-line"><span class="td-line-no">12</span><code>  expires: <span class="td-number">Aug 29, 2026 at 14:32 UTC</span></code></div>
+            <div class="td-code-line"><span class="td-line-no">13</span><code> </code></div>
+            <div class="td-code-line"><span class="td-line-no">14</span><code><span class="td-prompt">$</span> sk install PL1mY4- --agent codex</code></div>
+            <div class="td-code-line td-marked-line"><span class="td-line-no">15</span><code><span class="td-success">Installed</span> review-pr → .agents/skills/review-pr</code></div>
           </div>
           <div class="td-terminal-foot"><span><i></i> snapshot online</span><span>exit 0</span></div>
         </figure>
       </div>
     </section>
 
-    <section class="td-quickstart" aria-label="Quick install">
-      <div class="td-wrap td-quickstart-inner">
-        <div><span class="td-section-index">00</span><strong>Install once.</strong></div>
-        <div class="td-command-inline">
-          <span class="td-prompt" aria-hidden="true">$</span>
-          <code>{installCommand}</code>
-          <button type="button" class="td-copy-text" data-copy={installCommand}><span>copy</span><b aria-hidden="true">✓ copied</b></button>
-        </div>
+    <section class="td-quickstart" aria-label="Product boundary">
+      <div class="td-wrap td-boundary-line">
+        <span class="td-section-index">00 / the handoff</span>
+        <p><strong>One local folder.</strong> One inspectable link. Seven days to install it.</p>
+        <code>not a registry → not a marketplace</code>
       </div>
     </section>
 
     <section class="td-workflow td-wrap" id="workflow" aria-labelledby="workflow-title">
       <header class="td-section-head">
-        <h2 id="workflow-title">One artifact moves.<br /><span>Nothing runs behind your back.</span></h2>
-        <div><p>Skilldrop transfers the directory you already have. The receiver can verify the exact snapshot before choosing where it goes.</p><code>01 / transfer protocol</code></div>
+        <h2 id="workflow-title">Marketplaces are for discovery.<br /><span>Skilldrop is for handoff.</span></h2>
+        <div><p>skills.sh and GitHub help you publish reusable skills. Skilldrop handles the moment before that: sending one working local skill to one teammate without creating a repository.</p><code>01 / local → link → teammate</code></div>
       </header>
 
       <div class="td-command-list">
         <article>
-          <div class="td-command-title"><span>01</span><h3>Share a directory</h3></div>
-          <p>Validate a local skill and upload an immutable snapshot.</p>
+          <div class="td-command-title"><span>01</span><h3>Share it where it lives.</h3></div>
+          <p>Run <code>sk share</code> on any folder with a <code>SKILL.md</code>.</p>
           <div class="td-mini-command"><code><span>$</span> sk share ./review-pr</code><button data-copy="sk share ./review-pr" aria-label="Copy share example">copy</button></div>
         </article>
         <article>
-          <div class="td-command-title"><span>02</span><h3>Inspect the snapshot</h3></div>
-          <p>Verify metadata, checksum, file modes, and executable files without extracting the bundle.</p>
+          <div class="td-command-title"><span>02</span><h3>Review the exact snapshot.</h3></div>
+          <p>See every file, checksum, executable, and the exact expiration time.</p>
           <div class="td-mini-command"><code><span>$</span> sk inspect PL1mY4-</code><button data-copy="sk inspect PL1mY4-" aria-label="Copy inspect example">copy</button></div>
         </article>
         <article>
-          <div class="td-command-title"><span>03</span><h3>Install for your agent</h3></div>
-          <p>Choose project or global scope. Skilldrop detects the supported agents already on the machine.</p>
+          <div class="td-command-title"><span>03</span><h3>Install it for your agent.</h3></div>
+          <p>One command for Claude Code, Codex, or the agent you already use.</p>
           <div class="td-mini-command"><code><span>$</span> sk install PL1mY4- --agent codex</code><button data-copy="sk install PL1mY4- --agent codex" aria-label="Copy install example">copy</button></div>
         </article>
       </div>
@@ -156,6 +157,8 @@ const softwareSchema = {
               <div><dt>protocol</dt><dd>1</dd></div>
               <div><dt>bundle</dt><dd>4.9 KiB · 5018 bytes</dd></div>
               <div><dt>bundle sha256</dt><dd>5af18c2…</dd></div>
+              <div><dt>expires</dt><dd>Aug 29 · 14:32 UTC</dd></div>
+              <div><dt>visibility</dt><dd>unlisted, not private</dd></div>
               <div><dt>files</dt><dd>2</dd></div>
               <div><dt>executables</dt><dd>none</dd></div>
             </dl>
@@ -191,7 +194,8 @@ const softwareSchema = {
         <thead><tr><th>Property</th><th>Skilldrop</th><th>Why it matters</th></tr></thead>
         <tbody>
           <tr><th>Identity</th><td>no account</td><td>Share directly from the terminal.</td></tr>
-          <tr><th>Storage</th><td>immutable snapshot</td><td>The received artifact cannot change under the same link.</td></tr>
+          <tr><th>Storage</th><td>immutable for 7 days</td><td>The artifact cannot change under the same link and is deleted after expiry.</td></tr>
+          <tr><th>Visibility</th><td>unlisted, not private</td><td>Anyone with the transfer link can retrieve the snapshot.</td></tr>
           <tr><th>Inspection</th><td>before extraction</td><td>Review paths, modes, checksums, and executables first.</td></tr>
           <tr><th>Execution</th><td>never automatic</td><td>Skill scripts are transferred, not run.</td></tr>
           <tr><th>Source control</th><td>not required</td><td>Useful local work can move without becoming a repository.</td></tr>
@@ -202,8 +206,8 @@ const softwareSchema = {
     <section class="td-install td-wrap" id="install" aria-labelledby="install-title">
       <div class="td-install-heading">
         <span class="td-section-index">05 / get sk</span>
-        <h2 id="install-title">Your next skill is<br /><span>one command away.</span></h2>
-        <p>Install the CLI, then run <code>sk share</code> from any skill directory.</p>
+        <h2 id="install-title">The next time a teammate asks<br /><span>“can you send me that skill?”, send a link.</span></h2>
+        <p>Install Skilldrop, then run <code>sk share</code> from any skill directory.</p>
       </div>
       <div class="td-install-panel">
         <div class="td-install-tabs" role="tablist" aria-label="Installation method">
@@ -213,7 +217,7 @@ const softwareSchema = {
         </div>
         <div class="td-install-command" role="tabpanel">
           <span class="td-prompt" aria-hidden="true">$</span><code data-install-code>{installCommand}</code>
-          <button type="button" data-copy={installCommand} data-install-copy><span>Copy command</span><b aria-hidden="true">✓ Copied</b></button>
+          <button type="button" data-copy={installCommand} data-install-copy data-s-event="install_command_copy" data-s-event-props="command_variant=script"><span>Install Skilldrop</span><b aria-hidden="true">✓ Copied</b></button>
         </div>
         <div class="td-install-links"><a href="https://getsk.dev/install.sh">view script</a><a href="/docs/">quick start →</a></div>
       </div>
@@ -232,6 +236,9 @@ const softwareSchema = {
   <div class="td-toast" role="status" aria-live="polite">Copied to clipboard</div>
 
   <script>
+    const analyticsWindow = window as typeof window & { stonks?: { event: (name: string, props?: Record<string, string>) => void } };
+    window.addEventListener("load", () => analyticsWindow.stonks?.event("landing_view", { landing_variant: "handoff_v1" }), { once: true });
+
     const installTabs = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-install-tab]"));
     const installCode = document.querySelector<HTMLElement>("[data-install-code]");
     const installCopy = document.querySelector<HTMLButtonElement>("[data-install-copy]");
