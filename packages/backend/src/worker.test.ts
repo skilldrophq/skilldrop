@@ -3,6 +3,7 @@ import { expect, test } from "bun:test";
 import type { CanonicalSnapshotId } from "./models";
 import {
   isSkilldropCliUserAgent,
+  shouldShowSnapshotWebsite,
   snapshotAliasCandidates,
   snapshotContentMatchesId,
 } from "./worker";
@@ -18,7 +19,8 @@ test("builds Git-style snapshot aliases from seven characters", () => {
 });
 
 test("builds content-addressed aliases through the full SHA-256", () => {
-  const id = "5af18c2b19114f9d46e2e70acb7832f1eae3e19da095ce7cbad1329b12ea4e98" as CanonicalSnapshotId;
+  const id =
+    "5af18c2b19114f9d46e2e70acb7832f1eae3e19da095ce7cbad1329b12ea4e98" as CanonicalSnapshotId;
   const candidates = snapshotAliasCandidates(id);
 
   expect(candidates[0]).toBe("5af18c2");
@@ -28,7 +30,8 @@ test("builds content-addressed aliases through the full SHA-256", () => {
 });
 
 test("verifies content-addressed IDs without rejecting legacy IDs", () => {
-  const id = "5af18c2b19114f9d46e2e70acb7832f1eae3e19da095ce7cbad1329b12ea4e98" as CanonicalSnapshotId;
+  const id =
+    "5af18c2b19114f9d46e2e70acb7832f1eae3e19da095ce7cbad1329b12ea4e98" as CanonicalSnapshotId;
   const legacyId = "PL1mY4-71OQ6swagAcabqX" as CanonicalSnapshotId;
 
   expect(snapshotContentMatchesId(id, id)).toBe(true);
@@ -40,4 +43,18 @@ test("recognizes versioned Skilldrop CLI user-agents", () => {
   expect(isSkilldropCliUserAgent("skilldrop-cli/0.0.2")).toBe(true);
   expect(isSkilldropCliUserAgent("curl/8.7.1")).toBe(false);
   expect(isSkilldropCliUserAgent("")).toBe(false);
+});
+
+test("shows the website only for browser document requests", () => {
+  const browser =
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36";
+
+  expect(
+    shouldShowSnapshotWebsite(browser, "text/html,application/xhtml+xml"),
+  ).toBe(true);
+  expect(shouldShowSnapshotWebsite(browser, "text/markdown")).toBe(false);
+  expect(shouldShowSnapshotWebsite("curl/8.7.1", "text/html")).toBe(false);
+  expect(shouldShowSnapshotWebsite("skilldrop-cli/0.0.7", "text/html")).toBe(
+    false,
+  );
 });

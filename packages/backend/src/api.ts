@@ -1,7 +1,4 @@
-import { install } from "@effect/platform-node/Undici";
-import { Cause } from "effect";
 import * as Schema from "effect/Schema";
-import { HttpEffect } from "effect/unstable/http";
 import * as HttpApi from "effect/unstable/httpapi/HttpApi";
 import * as HttpApiEndpoint from "effect/unstable/httpapi/HttpApiEndpoint";
 import * as HttpApiGroup from "effect/unstable/httpapi/HttpApiGroup";
@@ -20,6 +17,7 @@ import {
 } from "./models";
 
 const SnapshotParams = Schema.Struct({ id: SnapshotId });
+const SnapshotFileQuery = Schema.Struct({ path: Schema.String });
 const CanonicalSnapshotParams = Schema.Struct({ id: CanonicalSnapshotId });
 
 const createSnapshot = HttpApiEndpoint.post("createSnapshot", "/v1/snapshots", {
@@ -68,6 +66,19 @@ const getSnapshot = HttpApiEndpoint.get("getSnapshot", "/s/:id", {
   error: SnapshotNotFoundResponse,
 });
 
+const getSnapshotFile = HttpApiEndpoint.get(
+  "getSnapshotFile",
+  "/v1/snapshots/:id/file",
+  {
+    params: SnapshotParams,
+    query: SnapshotFileQuery,
+    success: Schema.Uint8Array.pipe(
+      HttpApiSchema.asUint8Array({ contentType: "application/octet-stream" }),
+    ),
+    error: SnapshotNotFoundResponse,
+  },
+);
+
 const downloadSnapshot = HttpApiEndpoint.get(
   "downloadSnapshot",
   "/s/:id/bundle",
@@ -95,6 +106,7 @@ export class SnapshotsGroup extends HttpApiGroup.make("snapshots")
   .add(uploadSnapshot)
   .add(getSnapshotMetadata)
   .add(getSnapshot)
+  .add(getSnapshotFile)
   .add(downloadSnapshot) {}
 
 export class SnapshotApi extends HttpApi.make("SnapshotApi").add(

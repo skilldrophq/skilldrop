@@ -71,6 +71,9 @@ export const snapshotAliasCandidates = (
 export const isSkilldropCliUserAgent = (userAgent: string) =>
   userAgent.startsWith(SKILLDROP_CLI_USER_AGENT_PREFIX);
 
+export const shouldShowSnapshotWebsite = (userAgent: string, accept: string) =>
+  /Mozilla\/\d/i.test(userAgent) && /(?:^|,)\s*text\/html\b/i.test(accept);
+
 const HttpPlatformStub = Layer.succeed(HttpPlatform.HttpPlatform, {
   platform: "web",
   compression: {
@@ -210,7 +213,8 @@ const WorkerImplementation = Effect.gen(function* () {
         .get(snapshotAliasKey(candidate))
         .pipe(Effect.orDie);
       if (existing !== null) {
-        if ((yield* existing.text().pipe(Effect.orDie)) === id) return candidate;
+        if ((yield* existing.text().pipe(Effect.orDie)) === id)
+          return candidate;
         continue;
       }
       const stored = yield* bucket
@@ -222,10 +226,7 @@ const WorkerImplementation = Effect.gen(function* () {
       const raced = yield* bucket
         .get(snapshotAliasKey(candidate))
         .pipe(Effect.orDie);
-      if (
-        raced !== null &&
-        (yield* raced.text().pipe(Effect.orDie)) === id
-      ) {
+      if (raced !== null && (yield* raced.text().pipe(Effect.orDie)) === id) {
         return candidate;
       }
     }
@@ -288,7 +289,9 @@ const WorkerImplementation = Effect.gen(function* () {
             }
 
             const validation = yield* validateUpload(payload);
-            if (!snapshotContentMatchesId(params.id, validation.contentSha256)) {
+            if (
+              !snapshotContentMatchesId(params.id, validation.contentSha256)
+            ) {
               return yield* new InvalidSnapshot({
                 message: "Snapshot content does not match its ID",
               });
@@ -333,6 +336,18 @@ const WorkerImplementation = Effect.gen(function* () {
           "getSnapshot",
           Effect.fn("getSnapshot")(function* ({ params }) {
             yield* recordEndpoint("getSnapshot");
+            const request = yield* HttpServerRequest;
+            if (
+              shouldShowSnapshotWebsite(
+                request.headers["user-agent"] ?? "",
+                request.headers.accept ?? "",
+              )
+            ) {
+              return HttpServerResponse.redirect(
+                `/snapshot/?id=${encodeURIComponent(params.id)}`,
+                { status: 302 },
+              );
+            }
             const object = yield* getObject(params.id);
             const bytes = yield* object.bytes().pipe(Effect.orDie);
             const snapshot = yield* readStoredSnapshot(bytes);
@@ -344,6 +359,20 @@ const WorkerImplementation = Effect.gen(function* () {
                 "x-content-type-options": "nosniff",
               },
             });
+          }),
+        )
+        .handle(
+          "getSnapshotFile",
+          Effect.fn("getSnapshotFile")(function* ({ params, query }) {
+            yield* recordEndpoint("getSnapshotFile");
+            const object = yield* getObject(params.id);
+            const bytes = yield* object.bytes().pipe(Effect.orDie);
+            const snapshot = yield* readStoredSnapshot(bytes);
+            const content = snapshot.files.get(query.path);
+            if (content === undefined) {
+              return yield* new SnapshotNotFound({ message: "File not found" });
+            }
+            return content;
           }),
         )
         .handle(
@@ -367,13 +396,13 @@ const WorkerImplementation = Effect.gen(function* () {
           "install",
           Effect.fn("install")(function* ({ request }) {
             yield* recordEndpoint("install");
-            yield* Effect.try({
-              try: () => new URL(request.originalUrl),
-              catch: () => new NotFound(),
-            }).pipe(
-              Effect.map((uri) => uri.hostname),
+            const hostname = /^https?:\/\/([^/?#:]+)(?::\d+)?(?:[/?#]|$)/i.exec(
+              request.originalUrl,
+            )?.[1];
+            yield* Effect.succeed(hostname).pipe(
               Effect.filterOrElse(
-                (hostname) => /getsk\.dev/.test(hostname),
+                (value): value is string =>
+                  value !== undefined && /(?:^|\.)getsk\.dev$/.test(value),
                 () => Effect.fail(new NotFound()),
               ),
               Effect.tapError(() =>

@@ -10,7 +10,11 @@
     "check": "astro check"
   },
   "dependencies": {
-    "astro": "latest"
+    "@pierre/trees": "^1.0.0-beta.6",
+    "astro": "latest",
+    "dompurify": "^3.4.14",
+    "marked": "^18.0.11",
+    "sugar-high": "^2.1.0"
   },
   "devDependencies": {
     "@astrojs/check": "latest",

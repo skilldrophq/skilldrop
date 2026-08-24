@@ -1,0 +1,256 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import "../../styles/snapshot-viewer.css";
+---
+
+<BaseLayout
+  title="Snapshot preview — Skilldrop"
+  description="Inspect every file in an immutable Skilldrop snapshot before installing it."
+  bodyClass="snapshot-viewer-body"
+  themeColor="#f4eee4"
+  robots="noindex, nofollow, noarchive"
+>
+  <a class="viewer-skip" href="#snapshot-content">Skip to snapshot content</a>
+  <header class="viewer-header">
+    <a class="viewer-brand" href="/" aria-label="Skilldrop home">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M5.5 9.5h21v16h-21z"></path><path d="M16 3.5v14m0 0 5-5m-5 5-5-5"></path></svg>
+      <span>skilldrop</span>
+    </a>
+    <div class="viewer-header-state"><span></span> immutable snapshot</div>
+    <a class="viewer-security" href="/security/">How snapshots stay safe <span aria-hidden="true">↗</span></a>
+  </header>
+
+  <main id="snapshot-content" class="viewer-shell" aria-live="polite">
+    <section class="viewer-loading" data-view="loading">
+      <span class="viewer-loader" aria-hidden="true"></span>
+      <p>Opening snapshot…</p>
+    </section>
+
+    <section class="viewer-error" data-view="error" hidden>
+      <p class="viewer-kicker">Snapshot unavailable</p>
+      <h1>There is nothing to inspect here.</h1>
+      <p data-error-message>The link may be incomplete or the snapshot may have expired.</p>
+      <a href="/">Return to Skilldrop</a>
+    </section>
+
+    <div class="viewer-workspace" data-view="workspace" hidden>
+      <aside class="viewer-sidebar" aria-label="Snapshot files and details">
+        <div class="viewer-identity">
+          <p class="viewer-kicker">Inspect before install</p>
+          <h1 data-snapshot-name>Snapshot</h1>
+          <code data-snapshot-id></code>
+        </div>
+
+        <div class="viewer-file-heading">
+          <span>Files</span>
+          <small data-file-count></small>
+        </div>
+        <div id="snapshot-tree" class="viewer-tree" aria-label="Snapshot file tree"></div>
+
+        <dl class="viewer-meta">
+          <div><dt>Uploaded</dt><dd data-uploaded>—</dd></div>
+          <div><dt>Bundle</dt><dd data-bundle-size>—</dd></div>
+          <div><dt>Checksum</dt><dd><code data-checksum>—</code></dd></div>
+        </dl>
+
+        <div class="viewer-install">
+          <span>Install this exact snapshot</span>
+          <div><code data-install-command></code><button type="button" data-copy-command aria-label="Copy install command">Copy</button></div>
+          <small>Verified again before anything is written.</small>
+        </div>
+      </aside>
+
+      <section class="viewer-document" aria-label="File preview">
+        <header class="viewer-document-header">
+          <div>
+            <span class="viewer-file-dot" aria-hidden="true"></span>
+            <code data-active-path>SKILL.md</code>
+          </div>
+          <div class="viewer-document-actions">
+            <span data-active-size></span>
+            <a data-raw-file href="#" download>Raw <span aria-hidden="true">↗</span></a>
+          </div>
+        </header>
+        <article class="viewer-preview" data-preview></article>
+      </section>
+    </div>
+  </main>
+
+  <div class="viewer-toast" role="status" aria-live="polite">Command copied</div>
+
+  <script>
+    import { FileTree } from "@pierre/trees";
+    import DOMPurify from "dompurify";
+    import { Marked, Renderer } from "marked";
+    import { highlight } from "sugar-high";
+    import { lang as normalizeLanguage } from "sugar-high/lang";
+
+    interface ManifestFile {
+      path: string;
+      size: number;
+      sha256: string;
+    }
+
+    interface SnapshotMetadata {
+      id: string;
+      size: number;
+      sha256: string;
+      uploaded_at: string;
+      manifest: { name: string; files: ManifestFile[] };
+    }
+
+    const loadingView = document.querySelector<HTMLElement>('[data-view="loading"]');
+    const errorView = document.querySelector<HTMLElement>('[data-view="error"]');
+    const workspace = document.querySelector<HTMLElement>('[data-view="workspace"]');
+    const preview = document.querySelector<HTMLElement>("[data-preview]");
+    const activePath = document.querySelector<HTMLElement>("[data-active-path]");
+    const activeSize = document.querySelector<HTMLElement>("[data-active-size]");
+    const rawFile = document.querySelector<HTMLAnchorElement>("[data-raw-file]");
+    const treeMount = document.querySelector<HTMLElement>("#snapshot-tree");
+    const toast = document.querySelector<HTMLElement>(".viewer-toast");
+    const snapshotId = new URLSearchParams(window.location.search).get("id");
+
+    const setText = (selector: string, value: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (element) element.textContent = value;
+    };
+
+    const formatBytes = (bytes: number) => {
+      if (bytes < 1024) return `${bytes} B`;
+      if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KiB`;
+      return `${(bytes / 1024 / 1024).toFixed(1)} MiB`;
+    };
+
+    const languageForPath = (path: string) => {
+      const basename = path.split("/").at(-1)?.toLowerCase() ?? "";
+      if (basename === "dockerfile") return "dockerfile";
+      return normalizeLanguage(basename.split(".").at(-1) ?? "") ?? "markdown";
+    };
+
+    const renderer = new Renderer();
+    renderer.code = ({ text, lang: fenceLanguage }) => {
+      const language = normalizeLanguage(fenceLanguage?.split(/\s+/)[0] ?? "") ?? "markdown";
+      return `<pre class="viewer-code"><code>${highlight(text, { lang: language })}</code></pre>`;
+    };
+    renderer.link = ({ href, title, tokens }) => {
+      const label = renderer.parser.parseInline(tokens);
+      const safeTitle = title ? ` title="${title.replaceAll('"', "&quot;")}"` : "";
+      return `<a href="${href}"${safeTitle} target="_blank" rel="noreferrer">${label}</a>`;
+    };
+    const markdown = new Marked({ gfm: true, breaks: false, renderer });
+
+    const renderFile = (path: string, source: string) => {
+      if (!preview) return;
+      if (/\.(?:md|markdown|mdx)$/i.test(path)) {
+        const html = markdown.parse(source) as string;
+        preview.className = "viewer-preview viewer-preview--markdown";
+        preview.innerHTML = DOMPurify.sanitize(html, {
+          ADD_ATTR: ["target"],
+          FORBID_TAGS: ["iframe", "object", "embed", "style"],
+        });
+      } else {
+        preview.className = "viewer-preview viewer-preview--source";
+        preview.innerHTML = `<pre class="viewer-code"><code>${highlight(source, { lang: languageForPath(path) })}</code></pre>`;
+      }
+    };
+
+    const treePaths = (files: ManifestFile[]) => {
+      const paths = new Set<string>();
+      for (const file of files) {
+        const parts = file.path.split("/");
+        for (let index = 1; index < parts.length; index += 1) {
+          paths.add(`${parts.slice(0, index).join("/")}/`);
+        }
+        paths.add(file.path);
+      }
+      return [...paths];
+    };
+
+    const showError = (message: string) => {
+      loadingView?.setAttribute("hidden", "");
+      workspace?.setAttribute("hidden", "");
+      errorView?.removeAttribute("hidden");
+      setText("[data-error-message]", message);
+    };
+
+    const loadSnapshot = async () => {
+      if (!snapshotId || !treeMount || !preview) {
+        showError("This snapshot link is incomplete.");
+        return;
+      }
+
+      const response = await fetch(`/v1/snapshots/${encodeURIComponent(snapshotId)}`);
+      if (!response.ok) {
+        showError(response.status === 404
+          ? "This snapshot may have expired, or the link is incorrect."
+          : "The snapshot could not be loaded. Try again in a moment.");
+        return;
+      }
+
+      const metadata = await response.json() as SnapshotMetadata;
+      const filesByPath = new Map(metadata.manifest.files.map((file) => [file.path, file]));
+      const installCommand = `sk install https://skilldrop.dev/s/${metadata.id}`;
+
+      document.title = `${metadata.manifest.name} — Skilldrop snapshot`;
+      setText("[data-snapshot-name]", metadata.manifest.name);
+      setText("[data-snapshot-id]", metadata.id);
+      setText("[data-file-count]", `${metadata.manifest.files.length} total`);
+      setText("[data-uploaded]", new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(metadata.uploaded_at)));
+      setText("[data-bundle-size]", formatBytes(metadata.size));
+      setText("[data-checksum]", `${metadata.sha256.slice(0, 10)}…${metadata.sha256.slice(-8)}`);
+      setText("[data-install-command]", installCommand);
+
+      let requestVersion = 0;
+      const openFile = async (path: string) => {
+        const file = filesByPath.get(path);
+        if (!file) return;
+        const version = ++requestVersion;
+        activePath && (activePath.textContent = path);
+        activeSize && (activeSize.textContent = formatBytes(file.size));
+        preview.className = "viewer-preview viewer-preview--loading";
+        preview.textContent = "Reading file…";
+        const fileUrl = `/v1/snapshots/${encodeURIComponent(metadata.id)}/file?path=${encodeURIComponent(path)}`;
+        if (rawFile) rawFile.href = fileUrl;
+        const fileResponse = await fetch(fileUrl);
+        if (version !== requestVersion) return;
+        if (!fileResponse.ok) {
+          preview.textContent = "This file could not be read.";
+          return;
+        }
+        renderFile(path, await fileResponse.text());
+      };
+
+      const tree = new FileTree({
+        paths: treePaths(metadata.manifest.files),
+        initialExpansion: "open",
+        initialSelectedPaths: ["SKILL.md"],
+        density: "compact",
+        icons: { set: "complete", colored: false },
+        search: metadata.manifest.files.length > 8,
+        flattenEmptyDirectories: false,
+        onSelectionChange(paths) {
+          const selectedFile = [...paths].reverse().find((path) => filesByPath.has(path));
+          if (selectedFile) void openFile(selectedFile);
+        },
+      });
+      tree.render({ containerWrapper: treeMount });
+
+      loadingView?.setAttribute("hidden", "");
+      errorView?.setAttribute("hidden", "");
+      workspace?.removeAttribute("hidden");
+      await openFile(filesByPath.has("SKILL.md") ? "SKILL.md" : metadata.manifest.files[0]!.path);
+
+      document.querySelector<HTMLButtonElement>("[data-copy-command]")?.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(installCommand);
+          toast?.classList.add("is-visible");
+          window.setTimeout(() => toast?.classList.remove("is-visible"), 1500);
+        } catch {
+          window.prompt("Copy this command:", installCommand);
+        }
+      });
+    };
+
+    loadSnapshot().catch(() => showError("The snapshot could not be loaded. Try again in a moment."));
+  </script>
+</BaseLayout>
