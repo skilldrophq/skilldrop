@@ -75,8 +75,6 @@ export const loadInstalledSkills = Effect.fn("loadInstalledSkills")(function* (
   return yield* discoverInstalledSkills(rootsForScopes(topology, scopes));
 });
 
-export const dim = ui.dim;
-
 export const skillAgentGroup = (skill: InstalledSkill) => {
   const universal = skill.agents.find((agent) => agent.name === "universal");
   if (universal !== undefined) return universal.displayName;

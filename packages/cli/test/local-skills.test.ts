@@ -4,7 +4,6 @@ import { Effect, FileSystem, Path } from "effect";
 import type { Scope } from "effect/Scope";
 import type { Agent } from "../src/agents.ts";
 import {
-  dim,
   discoverInstalledSkills,
   renderInstalledSkills,
 } from "../src/local-skills.ts";
@@ -130,7 +129,7 @@ describe("installed skill discovery", () => {
     expect(skills).toHaveLength(1);
   });
 
-  test("groups the list by agent and scope and renders dimmed prompt metadata", () => {
+  test("groups the list by agent and scope", () => {
     const output = renderInstalledSkills([
       {
         name: "review-pr",
@@ -149,15 +148,6 @@ describe("installed skill discovery", () => {
     expect(output).toContain("Installed skills 2 total");
     expect(output).toContain("● Claude Code\n  GLOBAL\n    docs");
     expect(output).toContain("● Universal\n  PROJECT\n    review-pr");
-
-    const forceColor = process.env.FORCE_COLOR;
-    const noColor = process.env.NO_COLOR;
-    process.env.FORCE_COLOR = "1";
-    delete process.env.NO_COLOR;
-    expect(dim("project")).toBe("\u001b[2mproject\u001b[22m");
-    if (forceColor === undefined) delete process.env.FORCE_COLOR;
-    else process.env.FORCE_COLOR = forceColor;
-    if (noColor !== undefined) process.env.NO_COLOR = noColor;
   });
 
   test("renders the same scoped skill once across multiple agents", () => {
@@ -180,7 +170,7 @@ describe("installed skill discovery", () => {
     expect(output).toContain(
       "● Claude Code + Universal\n  GLOBAL\n    review-pr",
     );
-    expect(output.match(/    review-pr/g)).toHaveLength(1);
+    expect(output.match(/ {4}review-pr/g)).toHaveLength(1);
     expect(output).toContain("/home/me/.claude/skills/review-pr");
     expect(output).toContain("/home/me/.agents/skills/review-pr");
   });

@@ -32,8 +32,6 @@ export interface AgentRoot {
 }
 
 export interface AgentTopology {
-  readonly home: string;
-  readonly projectRoot: string;
   readonly definitions: ReadonlyArray<Agent>;
   readonly roots: ReadonlyArray<AgentRoot>;
   readonly canonicalRoots: Readonly<Record<SkillScope, string>>;
@@ -142,8 +140,6 @@ export const makeAgentTopology = Effect.fn("makeAgentTopology")(
       }
     }
     return {
-      home: input.home,
-      projectRoot: input.projectRoot,
       definitions,
       roots: [...roots.values()],
       canonicalRoots: {

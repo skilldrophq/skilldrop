@@ -22,7 +22,6 @@ import {
 } from "./install.ts";
 import { renderSnapshotInspection } from "./inspect.ts";
 import {
-  dim,
   loadInstalledSkills,
   renderInstalledSkills,
   skillAgentGroup,
@@ -143,7 +142,7 @@ export const makeCommand = (devMode: boolean) => {
               Prompt.select({
                 message: "Which skill do you want to share?",
                 choices: skills.map((skill) => ({
-                  title: `${skill.name} ${dim(`${skill.scope} · ${skillAgentGroup(skill)}`)}`,
+                  title: `${skill.name} ${ui.dim(`${skill.scope} · ${skillAgentGroup(skill)}`)}`,
                   description: skill.path,
                   value: skill.path,
                 })),
