@@ -95,6 +95,9 @@
   color: var(--site-secondary);
   font-size: 0.72rem;
 }
+.viewer-loading[hidden] {
+  display: none;
+}
 .viewer-loader {
   width: 24px;
   height: 24px;
